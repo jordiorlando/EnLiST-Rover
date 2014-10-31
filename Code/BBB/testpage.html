@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+    <script>
+        $(function() {
+            $("#message").keyup(function(event)
+            {
+                if (event.keyCode == 13)
+                {
+                    sendmsg();
+                }
+            });
+        
+            var ws = new WebSocket("ws://192.168.1.128:5556");
+            ws.onopen = function() {
+                $("#history").append("CONNECTED.\n");
+                $("#history").scrollTop($("#history")[0].scrollHeight - $("#history").height());
+            }
+            
+            ws.onclose = function() {
+                $("#history").append("DISCONNECTED.\n");
+                $("#history").scrollTop($("#history")[0].scrollHeight - $("#history").height());
+            }
+            
+            ws.onmessage = function(evt) {
+                $("#history").append("SERVER: " + evt.data + "\n");
+                $("#history").scrollTop($("#history")[0].scrollHeight - $("#history").height());
+            }
+            
+            function sendmsg()
+            {
+                $("#history").append("CLIENT: " + $("#message").val() + "\n");
+                ws.send($("#message").val());
+                $("#message").val("");
+                $("#history").scrollTop($("#history")[0].scrollHeight - $("#history").height());
+            }
+        });
+    </script>
+</head>
+
+<body>
+
+    <textarea id="history" rows="5" cols="100"></textarea>
+
+    <div>
+        <input id="message" type="text" style="width:300px;"></input>
+    </div>
+
+</body>
+
+</html>
