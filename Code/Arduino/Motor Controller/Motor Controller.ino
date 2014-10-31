@@ -37,17 +37,18 @@ void loop()
 	analogWrite(PWM, fPWM);
 }
 
-void receiveEvent(int howMany)
+void receiveEvent(int nNumBytes)
 {
-  while (0 < Wire.available())
-  {
-	uint8_t nByte = Wire.read();
+	uint8_t nBytes[nNumBytes];
+	for (uint8_t i = 0; i < nNumBytes; i++)
+	{
+		nBytes[i] = Wire.read();
 
-	if (nByte == 2)
-		digitalWrite(13, HIGH);
-	else if (nByte == 1)
-		digitalWrite(13, LOW);
-  }
+		if (nByte == 2)
+			digitalWrite(13, HIGH);
+		else if (nByte == 1)
+			digitalWrite(13, LOW);
+	}
 }
 
 void requestEvent()
