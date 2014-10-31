@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <PID_v1.h>
 
+#define MOTOR_ADDRESS 0x42
 #define IN1		0
 #define IN2		1
 #define STALL	2
@@ -16,8 +17,9 @@ PID speedPID(&fQE, &fPWM, &fSpeed, P, I, D, DIRECT);
 
 void setup()
 {
-	Wire.begin(4);                // join i2c bus with address #4
-	Wire.onReceive(receiveEvent); // register event
+	Wire.begin(MOTOR_ADDRESS);
+	Wire.onReceive(receiveEvent);
+	Wire.onRequest(requestEvent);
 
 	// initialize PID variables
 	fQE = 0;
@@ -35,14 +37,20 @@ void loop()
 	analogWrite(PWM, fPWM);
 }
 
-// function that executes whenever data is received from master
-// this function is registered as an event, see setup()
 void receiveEvent(int howMany)
 {
-	uint8_t nAvailableBytes = Wire.available();
-	char chCommand[nAvailableBytes];
+  while (0 < Wire.available())
+  {
+	uint8_t nByte = Wire.read();
 
-	for (uint8_t i = 0; i < nAvailableBytes; i++) {
-		chCommand[i] = Wire.read();
-	}
+	if (nByte == 2)
+		digitalWrite(13, HIGH);
+	else if (nByte == 1)
+		digitalWrite(13, LOW);
+  }
+}
+
+void requestEvent()
+{
+	Wire.write("hello ");
 }
