@@ -1,18 +1,15 @@
 #include <Wire.h>
 #include <PID_v1.h>
 
-#define IN1		2
-#define IN2		3
-#define QEA		4
-#define QEB		5
-#define ADDR0	6
-#define ADDR1	7
-#define STALL	8
-#define ADDR2	9
-#define ADDR3	10
-#define PWM		11
-#define LAMP	12
-#define SERVO	13
+#define IN1		0
+#define IN2		1
+#define STALL	2
+#define STANDBY	3
+#define LAMP	5
+#define PWM		7
+#define SERVO	8
+#define QEA		9
+#define QEB		10
 
 double fQE, fPWM, fSpeed, P, I, D;
 PID speedPID(&fQE, &fPWM, &fSpeed, P, I, D, DIRECT);
