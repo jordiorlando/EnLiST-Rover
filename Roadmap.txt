@@ -1,0 +1,23 @@
+Short-term (late-November demo)
+    - Live video feed
+    - Live sensor data
+    - Real-time control
+    - Simple web interface
+    - 3D printed good-looking rover
+    - Small sensor suite
+    - Projections of still imagery on walls
+    - Basic planet surface
+
+Medium-term (Q1-Q2 2015)
+    - Polished web interface
+    - Fully modular rover that can be assembled by students
+    - 'Satellite camera' with OpenCV object recognition
+    - Individual experiment areas on planet
+    -
+
+Long-term (summer 2015, or later)
+    - Pre-programmed missions (requires rover autonomy)
+    - Robust data visualization software
+    - Mission playback
+    - Cross-communication with other 'smart' devices in environment
+    - Automatic self-charging
