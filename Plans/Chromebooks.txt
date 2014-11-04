@@ -1,0 +1,2 @@
+Browser: Google Chrome
+Authentication: fingerprint scanner?

@@ -1,0 +1,16 @@
+- First thing: user or group login (cross-reference with class roster)
+- Web/cloud storage of each user's mission plans or mission data
+- 3-view webpage: plan, control, and analyze
+- Plan:
+	- List of mission goals
+	- Blockly view for beginner programming
+	- Custom high-level coding/interfacing view for intermediate programming
+	- Medium-level C++ or Python view for advanced programming
+- Control:
+	- Live video feed from either Mast Cam, Microscope, or Satellite Cam
+	- Live sensor feeds from all active sensors
+	- Pause/Resume, and Abort/Reset buttons
+- Analyze:
+	- Mission results (number of goals met)
+	- Raw timestamped log dump of all sensor data and video feeds
+	- Customizable graphs (eg pH vs time)
