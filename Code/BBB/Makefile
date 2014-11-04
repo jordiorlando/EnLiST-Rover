@@ -1,4 +1,4 @@
-SERVERTEST_OBJS = servertest.o genericSocket.o httpSocket.o videoSocket.o streamSocket.o i2cDevice.o i2cManager.o
+SERVERTEST_OBJS = servertest.o genericSocket.o httpSocket.o videoSocket.o streamSocket.o i2cDevice.o i2cManager.o IRTempSensor.o LCD.o
 
 CXX = g++
 LD = g++ 
@@ -43,8 +43,14 @@ streamSocket.o: streamSocket.cpp
 i2cDevice.o: i2cDevice.cpp
 	$(CXX) $(CXXFLAGS) i2cDevice.cpp
     
-i2cManager.o: i2cManager.cpp
+i2cManager.o: i2cManager.cpp i2cManager.h
 	$(CXX) $(CXXFLAGS) i2cManager.cpp
+    
+IRTempSensor.o : IRTempSensor.cpp IRTempSensor.h
+	$(CXX) $(CXXFLAGS) IRTempSensor.cpp
+    
+LCD.o : LCD.cpp
+	$(CXX) $(CXXFLAGS) LCD.cpp
     
 clean:
 	-rm -rf *.o servertest

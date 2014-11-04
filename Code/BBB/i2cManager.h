@@ -1,15 +1,12 @@
 #ifndef I2CMANAGER_H_
 #define I2CMANAGER_H_
 
-//#include "i2cDevice.h"
-
 #include <vector>
-
 #include <iostream>
 
 #include <stdlib.h>
 #include <fcntl.h>
-#include <linux/i2c-dev.h>
+#include <linux/i2c-dev.h>      //IMPORTANT: need the libi2c-dev version, not the kernel version
 #include <unistd.h>
 #include <sys/ioctl.h>
 
