@@ -1,4 +1,3 @@
-<pre>
 Chassis:
 http://www.creative-robotics.com/bmdsresources
 
@@ -49,4 +48,3 @@ https://github.com/Battlefy/paper-vertical-tabs
 
 Misc:
 http://blog.oscarliang.net/program-attiny2313-using-arduino/
-</pre>
