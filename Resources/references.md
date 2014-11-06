@@ -44,7 +44,5 @@ http://codepen.io/anon/pen/qJDsg<br>
 http://codepen.io/kabadesu/pen/qvdzK<br>
 https://github.com/Battlefy/paper-vertical-tabs
 
-
-
 Misc:<br>
 http://blog.oscarliang.net/program-attiny2313-using-arduino/
