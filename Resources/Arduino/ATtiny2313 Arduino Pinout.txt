@@ -11,4 +11,4 @@ ATtiny2313 Arduino Pinout
 		D6	8|		|13	 D10
 	   ~D7	9|		|12	 D9
 	   GND 10|		|11  D8
-			 |______|
+	   		 |______|
