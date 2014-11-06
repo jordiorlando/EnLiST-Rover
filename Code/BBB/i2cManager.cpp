@@ -4,11 +4,11 @@ i2cManager::i2cManager()
 {
 
     //open i2c file
-    //hardcoded 3 can be changed/dynamic to use other i2c buses
+    //hardcoded 1 can be changed/dynamic to use other i2c buses
     if ((i2c_fd = open("/dev/i2c-1", O_RDWR)) < 0)
     {
         //open() error
-        std::cout << "open" << std::endl;
+        std::cout << "i2cManager open" << std::endl;
     }
 
 }
