@@ -98,7 +98,7 @@ void receiveEvent(int nNumBytes)
 			digitalWrite(LAMP, LOW);
 			break;
 		case 0x07: // turn on lamp
-			digitalWrite(LAMP, HIGH);
+			analogWrite(LAMP, 127);
 			break;
 	}
 }
