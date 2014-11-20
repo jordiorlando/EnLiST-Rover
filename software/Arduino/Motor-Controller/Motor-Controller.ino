@@ -1,7 +1,13 @@
-#include <Wire.h>
+#include <TinyWireS.h>
+#include <Servo8Bit.h>
 #include <PID_v1.h>
 
-#define MOTOR_ADDRESS	0x42
+// the default buffer size
+#ifndef TWI_RX_BUFFER_SIZE
+#define TWI_RX_BUFFER_SIZE ( 16 )
+#endif
+
+#define MOTOR_ADDRESS	0x42 // change this to a unique address
 
 #define IN1		0
 #define IN2		1
@@ -13,16 +19,19 @@
 #define QEA		9
 #define QEB		10
 
-int16_t nServo;
-double fQE, fPWM, fSpeed, P, I, D;
-PID speedPID(&fQE, &fPWM, &fSpeed, P, I, D, DIRECT);
+volatile uint8_t nI2CReg[16]; // I2C register
+volatile uint8_t nRegPos; // current I2C register pointer position
+const uint8_t nRegSize = sizeof(nI2CReg); // size of the I2C register
+
+int16_t nServo; // servo position (-180~180)
+double fQE, fPWM, fSpeed, P, I, D; // all required PID variables
+PID speedPID(&fQE, &fPWM, &fSpeed, P, I, D, DIRECT); // declare PID loop
 
 void setup()
 {
-	// connect to I2C with specified address
-	Wire.begin(MOTOR_ADDRESS);
-	Wire.onReceive(receiveEvent);
-	Wire.onRequest(requestEvent);
+	TinyWireS.begin(MOTOR_ADDRESS); // connect to I2C with specified address
+	TinyWireS.onReceive(receiveEvent); // register receive event
+	TinyWireS.onRequest(requestEvent); // register request event
 
 	// initialize PID variables
 	fQE = 0;
@@ -32,6 +41,7 @@ void setup()
 	speedPID.SetMode(AUTOMATIC);
 	speedPID.SetSampleTime(10);
 
+	// set IO directions
 	pinMode(IN1, OUTPUT);
 	pinMode(IN2, OUTPUT);
 	pinMode(STALL, OUTPUT);
@@ -42,22 +52,43 @@ void setup()
 	pinMode(QEA, INPUT);
 	pinMode(QEB, INPUT);
 
-	digitalWrite(STANDBY, HIGH);
+	//digitalWrite(STANDBY, HIGH); // start in standby mode
 }
 
 void loop()
 {
-	fQE = 5;
-	speedPID.Compute();
-	analogWrite(PWM, (uint8_t)abs(fPWM));
+	TinyWireS_stop_check(); // has to run often to detect I2C stop state
+
+	fQE = 5; // test speed of 5 (replace with actual QE reading)
+	speedPID.Compute(); // compute PID
+	analogWrite(PWM, (uint8_t)abs(fPWM)); // update motor speed
+
+	// break speed apart into 4 bytes for I2C register
+	nI2CReg[0] = ((int32_t)fSpeed >> 24) & 0x000000FF;
+	nI2CReg[1] = ((int32_t)fSpeed >> 16) & 0x000000FF;
+	nI2CReg[2] = ((int32_t)fSpeed >> 8) & 0x000000FF;
+	nI2CReg[3] = (int32_t)fSpeed & 0x000000FF;
 }
 
-void receiveEvent(int nNumBytes)
+void receiveEvent(uint8_t nNumBytes)
 {
-	uint8_t nBytes[nNumBytes];
+	// sanity check
+	if (nNumBytes < 1 || nNumBytes > TWI_RX_BUFFER_SIZE) {
+		return;
+	}
+
+	nRegPos = TinyWireS.receive(); // set I2C register pointer position
+
+	// check if this write was only to set the pointer for next read
+	nNumBytes--;
+	if (!nNumBytes) {
+		return;
+	}
+
+	volatile uint8_t nBytes[nNumBytes];
 
 	for (uint8_t i = 0; i < nNumBytes; i++) {
-		nBytes[i] = Wire.read();
+		nBytes[i] = TinyWireS.receive();
 	}
 
 	switch (nBytes[0])
@@ -105,14 +136,11 @@ void receiveEvent(int nNumBytes)
 
 void requestEvent()
 {
-	uint8_t nSpeed = ((int32_t)fSpeed >> 24) & 0x000000FF;
-	Wire.write(nSpeed);
-	nSpeed = ((int32_t)fSpeed >> 16) & 0x000000FF;
-	Wire.write(nSpeed);
-	nSpeed = ((int32_t)fSpeed >> 8) & 0x000000FF;
-	Wire.write(nSpeed);
-	nSpeed = (int32_t)fSpeed & 0x000000FF;
-	Wire.write(nSpeed);
+	TinyWireS.send(nI2CReg[nRegPos]); // send byte
 
-	Wire.write("hello ");
+	// increment the reg position on each read, and loop back to zero
+	nRegPos++;
+	if (nRegPos >= nRegSize) {
+		nRegPos = 0;
+	}
 }
