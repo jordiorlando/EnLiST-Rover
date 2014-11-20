@@ -13,6 +13,7 @@ http://www.element14.com/community/community/designcenter/single-board-computers
 Motor Controllers:<br>
 http://highlowtech.org/?p=1695
 
+http://playground.arduino.cc/Code/USIi2c<br>
 http://www.instructables.com/id/ATTiny-USI-I2C-The-detailed-in-depth-and-infor/
 
 http://playground.arduino.cc/Code/PIDLibrary
