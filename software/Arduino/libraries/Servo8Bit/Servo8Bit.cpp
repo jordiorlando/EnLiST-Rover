@@ -61,6 +61,7 @@
     #define OCFnx   OCF0A
     #define OCIEnx  OCIE0A
     #define TIMSKn  TIMSK0
+    #define TIFRn   TIFR0
 #endif
 
 #ifdef USE_TIMER1
@@ -69,6 +70,7 @@
     #define OCFnx   OCF1A
     #define OCIEnx  OCIE1A
     #define TIMSKn  TIMSK1
+    #define TIFRn   TIFR1
 #endif
 
 // Trim Duration is about the total combined time spent inside the Compare Match ISR
@@ -635,7 +637,7 @@ void ServoSequencer::timerCompareMatchISR()
             //otherwise we need to clear the OCF0A flag because it is possible that the
             //counter value incremented and matched the output compare value while this
             //function was being executed
-            TIFR = (1 << OCF0A);  // write logical 1 to the OCF0A flag to clear it
+            TIFRn = (1 << OCF0A);  // write logical 1 to the OCF0A flag to clear it
                                   // also have to write 0 to all other bits for this to work.
         }
         break;
