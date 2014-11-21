@@ -9,7 +9,7 @@
 
 #define MOTOR_ADDRESS	0x42 // change this to a unique address
 
-#define REGSIZE = 16 // size of the I2C register
+#define REGSIZE 16 // size of the I2C register
 
 // pin definitions
 #define IN1		0

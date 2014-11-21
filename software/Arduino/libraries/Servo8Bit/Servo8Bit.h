@@ -49,8 +49,8 @@
 
 //Options
 //pick one, comment out the other one out:
-//#define USE_TIMER0
-#define USE_TIMER1
+#define USE_TIMER0
+//#define USE_TIMER1
 
 
 class Servo8Bit

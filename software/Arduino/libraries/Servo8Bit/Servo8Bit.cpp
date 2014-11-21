@@ -60,6 +60,7 @@
     #define OCRnx   OCR0A
     #define OCFnx   OCF0A
     #define OCIEnx  OCIE0A
+    #define TIMSKn  TIMSK0
 #endif
 
 #ifdef USE_TIMER1
@@ -67,6 +68,7 @@
     #define OCRnx   OCR1A
     #define OCFnx   OCF1A
     #define OCIEnx  OCIE1A
+    #define TIMSKn  TIMSK1
 #endif
 
 // Trim Duration is about the total combined time spent inside the Compare Match ISR
@@ -455,7 +457,7 @@ void ServoSequencer::servoTimerSetup()
     setupTimerPrescaler();
 
     // Enable Output Compare Match Interrupt
-    TIMSK |= (1 << OCIEnx);
+    TIMSKn |= (1 << OCIEnx);
 
     //reset the counter to 0
     TCNTn  = 0;
@@ -468,7 +470,7 @@ void ServoSequencer::servoTimerSetup()
     TCNT0 - The Timer/Counter
     OCR0A and OCR0B - Output Compare Registers
     TIFR0 - Timer Interrupt Flag Register
-    TIMSK - Timer Interrupt Mask Register
+    TIMSK0 - Timer Interrupt Mask Register
     TCCR0B Timer/Counter Control Register B
     */
 
@@ -514,23 +516,23 @@ void ServoSequencer::setupTimerPrescaler()
 
     #ifdef USE_TIMER1
         //reset the Timer Counter Control Register to its reset value
-        TCCR1 = 0;
+        TCCR1B = 0;
 
         #if F_CPU == 8000000L
             //set counter1 prescaler to 64
             //our F_CPU is 8mhz so this makes each timer tick be 8 microseconds long
-            TCCR1 &= ~(1<< CS13); //clear
-            TCCR1 |=  (1<< CS12); //set
-            TCCR1 |=  (1<< CS11); //set
-            TCCR1 |=  (1<< CS10); //set
+            TCCR1B &= ~(1<< CS13); //clear
+            TCCR1B |=  (1<< CS12); //set
+            TCCR1B |=  (1<< CS11); //set
+            TCCR1B |=  (1<< CS10); //set
 
         #elif F_CPU == 1000000L
             //set counter1 prescaler to 8
             //our F_CPU is 1mhz so this makes each timer tick be 8 microseconds long
-            TCCR1 &= ~(1<< CS13); //clear
-            TCCR1 |=  (1<< CS12); //set
-            TCCR1 &= ~(1<< CS11); //clear
-            TCCR1 &= ~(1<< CS10); //clear
+            TCCR1B &= ~(1<< CS13); //clear
+            TCCR1B |=  (1<< CS12); //set
+            TCCR1B &= ~(1<< CS11); //clear
+            TCCR1B &= ~(1<< CS10); //clear
         #else
             //unsupported clock speed
             //TODO: find a way to have the compiler stop compiling and bark at the user
@@ -814,7 +816,7 @@ Servo8Bit::~Servo8Bit()
 //
 //=============================================================================
 uint8_t Servo8Bit::attach(uint8_t pin)
-{	
+{
 	//Do we need to register with the servo sequencer?
     if(myServoNumber == invalidServoNumber)
 	{
