@@ -7,7 +7,7 @@
 
 	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
-	<script src="bower_components/platform/platform.js"></script>
+	<script src="bower_components/webcomponentsjs/webcomponents.js"></script>
 
 	<link rel="import" href="bower_components/font-roboto/roboto.html">
 	<link rel="import" href="bower_components/core-icons/core-icons.html">
@@ -18,6 +18,8 @@
 	<link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
 	<link rel="import" href="bower_components/paper-ripple/paper-ripple.html">
 	<link rel="import" href="bower_components/paper-item/paper-item.html">
+	<link rel="import" href="bower_components/paper-dropdown/paper-dropdown.html">
+	<link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
 	<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
 	<link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html">
 
@@ -85,10 +87,15 @@
 			<paper-icon-button id="navicon" icon="menu"></paper-icon-button>
 			<span flex>Mission Control</span>
 			<paper-icon-button icon="help"></paper-icon-button>
-			<paper-menu-button icon="more-vert" halign="right">
-				<paper-item label="Menu Item 1"></paper-item>
-				<paper-item label="Menu Item 2"></paper-item>
-				<paper-item label="Menu Item 3"></paper-item>
+			<paper-menu-button>
+				<paper-icon-button icon="more-vert"></paper-icon-button>
+				<paper-dropdown class="dropdown" halign="right">
+					<core-menu class="menu">
+						<paper-item>Menu Item 1</paper-item>
+						<paper-item>Menu Item 2</paper-item>
+						<paper-item>Menu Item 3</paper-item>
+					</core-menu>
+				</paper-dropdown>
 			</paper-menu-button>
 
 		</core-toolbar>
@@ -101,6 +108,7 @@
 					<core-item label="Plan"><paper-ripple fit></paper-ripple></core-item>
 					<core-item label="Control"><paper-ripple fit></paper-ripple></core-item>
 					<core-item label="Analyze"><paper-ripple fit></paper-ripple></core-item>
+					<paper-spinner></paper-spinner>
 				</core-menu>
 
 			</core-header-panel>

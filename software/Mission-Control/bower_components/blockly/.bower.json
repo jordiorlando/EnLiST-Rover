@@ -1,13 +1,14 @@
 {
   "name": "blockly",
-  "homepage": "https://github.com/JordiOrlando/blockly",
-  "_release": "df7814f4d8",
+  "homepage": "https://github.com/google/blockly",
+  "_release": "cefb9385ae",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "df7814f4d821b49d438cbbc6156aed035b7971a1"
+    "commit": "cefb9385aec03da2b75d05c276f95da22c0bf2d6"
   },
-  "_source": "git://github.com/JordiOrlando/blockly.git",
+  "_source": "git://github.com/google/blockly.git",
   "_target": "*",
-  "_originalSource": "JordiOrlando/blockly"
+  "_originalSource": "google/blockly",
+  "_direct": true
 }
