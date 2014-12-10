@@ -53,7 +53,22 @@
 // *The Servo Sequencer - which is the actual driver that generates pulses
 // *The Servo class - which provides the Arduino-like interface
 
-
+#define PA0	0
+#define PA1	1
+#define PA2	2
+#define PA3	3
+#define PA4	4
+#define PA5	5
+#define PA6	6
+#define PA7	7
+#define PB0	8
+#define PB1	9
+#define PB2	10
+#define PB3	11
+#define PB4	12
+#define PB5	13
+#define PB6	14
+#define PB7	15
 
 #ifdef USE_TIMER0
     #define TCNTn   TCNT0
@@ -196,29 +211,22 @@ volatile uint8_t                          ServoSequencer::servoIndex    = 0;
 uint8_t ServoSequencer::registerServo()
 {
 
-    if(servoArrayIsInited == false)
-    {
+    if(!servoArrayIsInited) {
         initServoArray();
-    }
-    else
-    {
+    } else {
         //the servo array is already inited. Do nothing.
         //It needs to be setup only once. We do it when the first servo is registered.
     }
 
 
     //find a free slot in the servo registry
-    for(uint8_t i = 0; i < kMaxNumberOfServosSupported; i++)
-    {
-        if(servoRegistry[i].slotOccupied == false)
-        {
+    for(uint8_t i = 0; i < kMaxNumberOfServosSupported; i++) {
+        if(!servoRegistry[i].slotOccupied) {
             //found a free slot.
             servoRegistry[i].slotOccupied = true;
             //return the slot number
             return i;
-        }
-        else
-        {
+        } else {
             //this slot is not free, check the next one.
         }
     }
@@ -239,14 +247,11 @@ uint8_t ServoSequencer::registerServo()
 void ServoSequencer::deregisterServo(uint8_t servoSlotNumber)
 {
     //make sure we got a valid slot number
-    if(servoSlotNumber < kMaxNumberOfServosSupported)
-    {
+    if(servoSlotNumber < kMaxNumberOfServosSupported) {
         servoRegistry[servoSlotNumber].enabled      = false;
         servoRegistry[servoSlotNumber].slotOccupied = false;
 		servoRegistry[servoSlotNumber].pulseLengthInTicks = 128; //restore the pulse length to the default setting.
-    }
-    else
-    {
+    } else {
         //we got a slot number that is out of range. Do nothing.
     }
 }//end deregisterServo
@@ -269,9 +274,8 @@ void ServoSequencer::deregisterServo(uint8_t servoSlotNumber)
 void ServoSequencer::setServoPulseLength(uint8_t servoNumber, uint16_t newLengthInMicroseconds)
 {
     //make sure we got a valid slot number and the slot is registered to a servo
-    if( (servoNumber < kMaxNumberOfServosSupported      ) &&
-        (servoRegistry[servoNumber].slotOccupied == true)   )
-    {
+    if((servoNumber < kMaxNumberOfServosSupported) &&
+        servoRegistry[servoNumber].slotOccupied) {
         //Convert the servo pulse length into timer ticks.
         //Each timer tick is 8 microseconds.
         int16_t newLengthInClockTicks = newLengthInMicroseconds / 8;
@@ -279,19 +283,14 @@ void ServoSequencer::setServoPulseLength(uint8_t servoNumber, uint16_t newLength
         newLengthInClockTicks -= 64;
 
         //make sure the length of this pulse is within the acceptable range
-        if( (newLengthInClockTicks > -1) && (newLengthInClockTicks < 256) )
-        {
+        if((newLengthInClockTicks > -1) && (newLengthInClockTicks < 256)) {
             servoRegistry[servoNumber].pulseLengthInTicks = static_cast<uint8_t>(newLengthInClockTicks);
             //Programing note: If pulseLengthInTicks is ever changed to be larger than 1 byte in size then
             //                 interrupts would need to be disabled when updating it to a new value.
-        }
-        else
-        {
+        } else {
             //The new pulse length is too short or long than what we can generate
         }
-    }
-    else
-    {
+    } else {
         //Servo number is out of range or is not allocate to a servo. Do nothing.
     }
 }//end setServoPulseLength
@@ -313,13 +312,10 @@ uint16_t ServoSequencer::getServoPulseLength(uint8_t servoNumber)
     uint16_t pulseLength = 0;
 
     //make sure we got a valid slot number and the slot is registered to a servo
-    if( (servoNumber < kMaxNumberOfServosSupported      ) &&
-        (servoRegistry[servoNumber].slotOccupied == true)   )
-    {
+    if((servoNumber < kMaxNumberOfServosSupported) &&
+        servoRegistry[servoNumber].slotOccupied) {
         pulseLength = (servoRegistry[servoNumber].pulseLengthInTicks * 8) + 64;
-    }
-    else
-    {
+    } else {
         //Servo number is out of range or is not allocate to a servo. Do nothing.
     }
 
@@ -341,15 +337,12 @@ uint16_t ServoSequencer::getServoPulseLength(uint8_t servoNumber)
 void ServoSequencer::setServoPin(uint8_t servoNumber, uint8_t newPin)
 {
     //make sure we got a valid slot number and the slot is registered to a servo
-    if( (servoNumber < kMaxNumberOfServosSupported      ) &&
-        (servoRegistry[servoNumber].slotOccupied == true)   )
-    {
+    if((servoNumber < kMaxNumberOfServosSupported) &&
+        servoRegistry[servoNumber].slotOccupied) {
 
         servoRegistry[servoNumber].pin = newPin;
 
-    }
-    else
-    {
+    } else {
         //Servo number is out of range or is not allocate to a servo. Do nothing.
     }
 }//end setServoPin
@@ -372,19 +365,14 @@ void ServoSequencer::setServoPin(uint8_t servoNumber, uint8_t newPin)
 void ServoSequencer::enableDisableServo(uint8_t servoNumber, bool servoShouldBeEnabled)
 {
     //make sure we got a valid slot number and the slot is registered to a servo
-    if( (servoNumber < kMaxNumberOfServosSupported      ) &&
-        (servoRegistry[servoNumber].slotOccupied == true)   )
-    {
-        if(servoShouldBeEnabled == true)
-        {
+    if((servoNumber < kMaxNumberOfServosSupported) &&
+        servoRegistry[servoNumber].slotOccupied) {
+        if(servoShouldBeEnabled) {
             //if this is the very first servo we are enabling then configure the servo timer
-            if( timerIsSetup == false)
-            {
+            if(!timerIsSetup) {
                 servoTimerSetup();
                 timerIsSetup = true;
-            }
-            else
-            {
+            } else {
                 //The timer is already setup. Do nothing.
                 //It needs to be setup only once. We do it when the first servo is enabled.
                 //We setup the timer as late as possible. This allows this servo library
@@ -395,9 +383,7 @@ void ServoSequencer::enableDisableServo(uint8_t servoNumber, bool servoShouldBeE
 
             //enable the servo. Its pulse will now be outputed on its pin.
             servoRegistry[servoNumber].enabled = true;
-        }
-        else
-        {
+        } else {
             //disable the servo. Its pulse will cease to be generated.
             servoRegistry[servoNumber].enabled = false;
             //TODO: set this servo pin low, if it is high.
@@ -405,9 +391,7 @@ void ServoSequencer::enableDisableServo(uint8_t servoNumber, bool servoShouldBeE
             //      forcing the pin low will generate a weird length pulse for the servo
             //      Need to add some sort of "disable pending" status
         }
-    }
-    else
-    {
+    } else {
         //Servo number is out of range or is not allocate to a servo. Do nothing.
     }
 }//end enableDisableServo
@@ -428,13 +412,10 @@ void ServoSequencer::enableDisableServo(uint8_t servoNumber, bool servoShouldBeE
 bool ServoSequencer::isEnabled(uint8_t servoNumber)
 {
     //make sure we got a valid slot number and the slot is registered to a servo
-    if( (servoNumber < kMaxNumberOfServosSupported      ) &&
-        (servoRegistry[servoNumber].slotOccupied == true)   )
-    {
+    if((servoNumber < kMaxNumberOfServosSupported) &&
+        servoRegistry[servoNumber].slotOccupied) {
         return servoRegistry[servoNumber].enabled;
-    }
-    else
-    {
+    } else {
         //Servo number is out of range or is not allocate to a servo.
         //So therefore it is not enabled.
         return false;
@@ -469,11 +450,11 @@ void ServoSequencer::servoTimerSetup()
     sei();
 
     /*
-    TCNT0 - The Timer/Counter
-    OCR0A and OCR0B - Output Compare Registers
-    TIFR0 - Timer Interrupt Flag Register
-    TIMSK0 - Timer Interrupt Mask Register
-    TCCR0B Timer/Counter Control Register B
+    TCNTn - The Timer/Counter
+    OCRnA and OCRnB - Output Compare Registers
+    TIFRn - Timer Interrupt Flag Register
+    TIMSKn - Timer Interrupt Mask Register
+    TCCRnB Timer/Counter Control Register B
     */
 
 }//end servoTimerSetup
@@ -556,8 +537,7 @@ void ServoSequencer::setupTimerPrescaler()
 void ServoSequencer::initServoArray()
 {
     //init the Servo Registry array
-    for(uint8_t i = 0; i < kMaxNumberOfServosSupported; ++i)
-    {
+    for(uint8_t i = 0; i < kMaxNumberOfServosSupported; ++i) {
         servoRegistry[i].pulseLengthInTicks = 128;
         servoRegistry[i].pin = 0;
         servoRegistry[i].enabled = false;
@@ -586,22 +566,16 @@ void ServoSequencer::timerCompareMatchISR()
         //go to the next servo in the registry
         ++servoIndex;
         //if we are the end of the registry, go to the beginning of it
-        if(servoIndex == kMaxNumberOfServosSupported)
-        {
+        if(servoIndex == kMaxNumberOfServosSupported) {
             servoIndex = 0;
-        }
-        else
-        {
+        } else {
             //we are not at the end, leave the servo index as is
         }
 
         //if this servo is enabled set the pin high
-        if( servoRegistry[servoIndex].enabled == true )
-        {
+        if( servoRegistry[servoIndex].enabled == true ) {
             PORTB |= (1 << servoRegistry[servoIndex].pin);
-        }
-        else
-        {
+        } else {
             //This servo position is not enabled, don't manipulate the pin
         }
 
@@ -624,16 +598,13 @@ void ServoSequencer::timerCompareMatchISR()
         TCNTn  = 0;
 
         //Did we just set OCRnx to zero?
-        if(OCRnx == 0)
-        {
+        if(OCRnx == 0) {
            //Since we are setting OCRnx and TCNTn to 0 we are not going to get an interrupt
            //until the counter overflows and goes back to 0.
            //set the counter its highest value, to have it overflow right away.
            TCNTn = 0xFF;
            //This will cause this interrupt to fire again almost immediately (at the next timer tick)
-        }
-        else
-        {
+        } else {
             //otherwise we need to clear the OCF0A flag because it is possible that the
             //counter value incremented and matched the output compare value while this
             //function was being executed
@@ -645,18 +616,14 @@ void ServoSequencer::timerCompareMatchISR()
 
     case WAITING_TO_SET_PIN_LOW:
         //if this servo is enabled set the pin low
-        if( servoRegistry[servoIndex].enabled == true )
-        {
+        if( servoRegistry[servoIndex].enabled == true ) {
             PORTB &= ~(1 << servoRegistry[servoIndex].pin);
-        }
-        else
-        {
+        } else {
             //This servo position is not enabled, don't manipulate the pin
         }
 
         //check if the length of this pulse is 2048 microseconds or longer
-        if( (64 + servoRegistry[servoIndex].pulseLengthInTicks) > 255 )
-        {
+        if( (64 + servoRegistry[servoIndex].pulseLengthInTicks) > 255 ) {
             //This pulse length has passed the 2048 us mark, so we skip state WAITING_FOR_2048_MARK
             //update state
             state = WAITING_TO_SET_PIN_HIGH;
@@ -664,9 +631,7 @@ void ServoSequencer::timerCompareMatchISR()
             //4096 microseconds mark
             //which is 512 minus the total pulse length. (resulting number will be between 0 and 255 inclusive)
             OCRnx = 512 - (64 + servoRegistry[servoIndex].pulseLengthInTicks);
-        }
-        else
-        {
+        } else {
             //This pulse length has not reached the 2048 us mark, therefor we have to get to that mark first
             //update state
             state = WAITING_FOR_2048_MARK;
@@ -820,34 +785,41 @@ Servo8Bit::~Servo8Bit()
 uint8_t Servo8Bit::attach(uint8_t pin)
 {
 	//Do we need to register with the servo sequencer?
-    if(myServoNumber == invalidServoNumber)
-	{
+    if(myServoNumber == invalidServoNumber) {
 		//Yep, we do, so register and save our servo number.
 		myServoNumber = ServoSequencer::registerServo();
-		if(myServoNumber == invalidServoNumber)
-		{
+		if(myServoNumber == invalidServoNumber) {
 			//We got an invalid servo number. That means the servo sequencer is full and can't handle any more servos.
 			return 0;
 		}
 	}
 
+	#if defined(__AVR_ATtiny84__) | \
+		defined(__AVR_ATtiny44__)
+		#if (pin >= 0) && (pin < 8)
+			DDRA |= (1 << pin); //set pin as output
+			ServoSequencer::setServoPin(myServoNumber, pin); //set the servo pin
+			ServoSequencer::enableDisableServo(myServoNumber, true); //enable the servo to start outputing the pwm wave
+		#elif (pin >= 8) && (pin < 12)
+			pin = pin % 8;
+			DDRB |= (1 << pin); //set pin as output
+			ServoSequencer::setServoPin(myServoNumber, pin); //set the servo pin
+			ServoSequencer::enableDisableServo(myServoNumber, true); //enable the servo to start outputing the pwm wave
+		#else
+		#endif
+	#endif
 
-    //LIMITATION: this servo class only works with PORTB, which is the only port
-    //on the attiny45 and attiny85
-
-    //valid pin values are between 0 and 5, inclusive.
-    if( pin <= 5 )
-    {
-        DDRB |= (1<<pin); //set pin as output
-        //set the servo pin
-        ServoSequencer::setServoPin(myServoNumber, pin);
-        //enable the servo to start outputing the pwm wave
-        ServoSequencer::enableDisableServo(myServoNumber, true);
-    }
-    else
-    {
-        //bad pin value. do nothing.
-    }
+	#if defined( __AVR_ATtiny25__ ) | \
+		defined( __AVR_ATtiny45__ ) | \
+		defined( __AVR_ATtiny85__ )
+		#if (pin >= 8) && (pin < 14)
+			pin = pin % 8;
+			DDRB |= (1 << pin); //set pin as output
+			ServoSequencer::setServoPin(myServoNumber, pin); //set the servo pin
+			ServoSequencer::enableDisableServo(myServoNumber, true); //enable the servo to start outputing the pwm wave
+		#else
+		#endif
+	#endif
 
     return myServoNumber;
 
@@ -913,13 +885,10 @@ void Servo8Bit::write(uint16_t value)
     if(myServoNumber == invalidServoNumber) return;
 
     //for now, only accept angles, and angles that are between 0 and 200 degrees
-    if( value > 180 )
-    {
+    if( value > 180 ) {
         //treat this number as microseconds
         writeMicroseconds( value );
-    }
-    else
-    {
+    } else {
         //treat this number as degrees
         uint16_t servoPulseLengthInUs = map(value, 0, 180, myMin, myMax);
         writeMicroseconds( servoPulseLengthInUs );
