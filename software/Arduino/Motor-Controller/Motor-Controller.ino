@@ -1,5 +1,5 @@
 #include <TinyWireS.h>
-//#include <Servo8Bit.h>
+#include <Servo8Bit.h>
 #include <PID_v1.h>
 
 // the default buffer size
@@ -90,7 +90,7 @@ bool bStandby = true;
 bool bBrakeMode = 0;
 bool bPIDMode = 0;
 
-//Servo8Bit servo; // declare servo object
+Servo8Bit servo; // declare servo object
 
 double fQE, fPWM, fSpeed, Kp = 2, Ki = 0.1, Kd = 1; // all required PID variables
 PID speedPID(&fQE, &fPWM, &fSpeed, Kp, Ki, Kd, DIRECT); // declare PID loop
@@ -100,7 +100,7 @@ void setup() {
 	TinyWireS.onReceive(receiveEvent); // register receive event
 	TinyWireS.onRequest(requestEvent); // register request event
 
-	//servo.attach(PB2);
+	servo.attach(10);
 
 	// initialize PID variables
 	fQE = 0;
@@ -153,6 +153,7 @@ void loop() {
 
 		// get servo position
 		// servo function with speed = nI2CReg[4];
+		servo.write(nI2CReg[4]);
 
 		analogWrite(LAMP, nI2CReg[5]); // update lamp brightness
 
