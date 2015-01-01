@@ -1,0 +1,10 @@
+First step: divide the original input by the max input
+    e.g. if the original input range is [-1023, +1023], map it to [-1, 1] by dividing by 1023
+
+Second step: bound the velocity and angular velocity to a circular domain
+    if sqrt(v^2 + ω^2) >= 1, v = sin(arctan(v/ω)) and ω = cos(arctan(v/ω))
+    else if sqrt(v^2 + ω^2) < 1, v = v * sin(arctan(v/ω)) and ω = ω * cos(arctan(v/ω))
+
+Third step: map v and ω to their real ranges
+    v gets mapped from [-1, 1] to [-v_max, v_max] (replace ? with actual max velocity, found from diameter and speed of wheel)
+    r gets mapped from [-1, 1] to [-?, ?] ()
