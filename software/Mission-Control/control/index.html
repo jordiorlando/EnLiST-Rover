@@ -7,21 +7,19 @@
 
 	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
-	<script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+	<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
 
-	<link rel="import" href="bower_components/font-roboto/roboto.html">
-	<link rel="import" href="bower_components/core-icons/core-icons.html">
-	<link rel="import" href="bower_components/core-menu/core-menu.html">
-	<link rel="import" href="bower_components/core-toolbar/core-toolbar.html">
-	<link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
-	<link rel="import" href="bower_components/core-scaffold/core-scaffold.html">
-	<!--<link rel="import" href="bower_components/core-animated-pages/core-animated-pages.html">
-	<link rel="import" href="bower_components/core-animated-pages/transitions/slide-from-right.html">-->
-	<link rel="import" href="bower_components/paper-ripple/paper-ripple.html">
-	<link rel="import" href="bower_components/paper-item/paper-item.html">
-	<link rel="import" href="bower_components/paper-dropdown/paper-dropdown.html">
-	<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
-	<link rel="import" href="bower_components/paper-menu-button/paper-menu-button.html">
+	<link rel="import" href="../bower_components/font-roboto/roboto.html">
+	<link rel="import" href="../bower_components/core-icons/core-icons.html">
+	<link rel="import" href="../bower_components/core-menu/core-menu.html">
+	<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
+	<link rel="import" href="../bower_components/core-header-panel/core-header-panel.html">
+	<link rel="import" href="../bower_components/core-scaffold/core-scaffold.html">
+	<link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
+	<link rel="import" href="../bower_components/paper-item/paper-item.html">
+	<link rel="import" href="../bower_components/paper-dropdown/paper-dropdown.html">
+	<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+	<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
 
 	<style shim-shadowdom>
 		html,body {
@@ -72,14 +70,14 @@
 
 		<core-scaffold>
 			<core-header-panel navigation flex mode="seamed">
-				<core-toolbar id="mainheader"><a href="index.html" class="inherit">Mission Control</a></core-toolbar>
-				<core-menu theme="core-light-theme">
-					<paper-item><a href="plan/index.html" class="inherit">Plan</a></paper-item>
-					<paper-item><a href="control/index.html" class="inherit">Control</a></paper-item>
-					<paper-item><a href="analyze/index.html" class="inherit">Analyze</a></paper-item>
+				<core-toolbar id="mainheader"><a href="../index.html" class="inherit">Mission Control</a></core-toolbar>
+				<core-menu theme="core-light-theme" selected="1">
+					<paper-item><a href="../plan/index.html" class="inherit">Plan</a></paper-item>
+					<paper-item><a href="../control/index.html" class="inherit">Control</a></paper-item>
+					<paper-item><a href="../analyze/index.html" class="inherit">Analyze</a></paper-item>
 				</core-menu>
 			</core-header-panel>
-			<div tool flex>Home</div>
+			<div tool flex>Control</div>
 			<div tool>
 				<paper-icon-button icon="help"></paper-icon-button>
 			</div>
@@ -97,7 +95,7 @@
 			</div>
 
 			<div fit>
-				Hello astronaut, welcome to Mission Control
+				content goes here
 			</div>
 		</core-scaffold>
 
