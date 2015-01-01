@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+
+<head>
+
+	<title>STELLArS Outpost</title>
+
+	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+	<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
+	<script src="../bower_components/Chart.js/Chart.js"></script>
+	<!--<script src="../bower_components/Chart.js.legend/src/legend.js"></script>-->
+
+	<link rel="stylesheet" href="../style.css" shim-shadowdom>
+
+	<link rel="import" href="../bower_components/font-roboto/roboto.html">
+	<link rel="import" href="../bower_components/core-icons/core-icons.html">
+	<link rel="import" href="../bower_components/core-menu/core-menu.html">
+	<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
+	<link rel="import" href="../bower_components/core-header-panel/core-header-panel.html">
+	<link rel="import" href="../bower_components/core-scaffold/core-scaffold.html">
+	<link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
+	<link rel="import" href="../bower_components/paper-item/paper-item.html">
+	<link rel="import" href="../bower_components/paper-dropdown/paper-dropdown.html">
+	<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+	<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+
+</head>
+
+<body unresolved fullbleed>
+
+	<template is="auto-binding">
+
+		<core-scaffold>
+			<core-header-panel navigation flex mode="seamed">
+				<core-toolbar id="mainheader"><a href="../index.html" class="inherit">Mission Control</a></core-toolbar>
+				<core-menu theme="core-light-theme" selected="2">
+					<paper-item><a href="../plan/index.html" class="inherit">Plan</a></paper-item>
+					<paper-item><a href="../control/index.html" class="inherit">Control</a></paper-item>
+					<paper-item><a href="../analyze/index.html" class="inherit">Analyze</a></paper-item>
+				</core-menu>
+			</core-header-panel>
+			<div tool flex>Analyze</div>
+			<div tool>
+				<paper-icon-button icon="help"></paper-icon-button>
+			</div>
+			<div tool>
+				<paper-menu-button>
+					<paper-icon-button icon="more-vert"></paper-icon-button>
+					<paper-dropdown class="dropdown" halign="right">
+						<core-menu class="menu">
+							<paper-item>Menu Item 1</paper-item>
+							<paper-item>Menu Item 2</paper-item>
+							<paper-item>Menu Item 3</paper-item>
+						</core-menu>
+					</paper-dropdown>
+				</paper-menu-button>
+			</div>
+
+			<div fit>
+				<canvas id="chart1" height="400" width="600"></canvas>
+				<!--<div id="legend1"></div>-->
+
+				<script>
+					var lineChartData1 = {
+						labels : ["January","February","March","April","May","June","July"],
+						datasets: [
+							{
+								label: "My First dataset",
+								fillColor: "rgba(220,220,220,0.2)",
+								strokeColor: "rgba(220,220,220,1)",
+								pointColor: "rgba(220,220,220,1)",
+								pointStrokeColor: "#fff",
+								pointHighlightFill: "#fff",
+								pointHighlightStroke: "rgba(220,220,220,1)",
+								data: [65, 59, 80, 81, 56, 55, 40]
+							},
+							{
+								label: "My Second dataset",
+								fillColor: "rgba(151,187,205,0.2)",
+								strokeColor: "rgba(151,187,205,1)",
+								pointColor: "rgba(151,187,205,1)",
+								pointStrokeColor: "#fff",
+								pointHighlightFill: "#fff",
+								pointHighlightStroke: "rgba(151,187,205,1)",
+								data: [28, 48, 40, 19, 86, 27, 90]
+							}
+						]
+
+					}
+
+					var myLine1 = new Chart(document.getElementById("chart1").getContext("2d")).Line(lineChartData1);
+
+					//legend(document.getElementById('legend1'), lineChartData1);
+				</script>
+			</div>
+		</core-scaffold>
+
+	</template>
+
+</body>
+
+</html>

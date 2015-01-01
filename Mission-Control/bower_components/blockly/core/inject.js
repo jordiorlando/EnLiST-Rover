@@ -27,6 +27,7 @@
 goog.provide('Blockly.inject');
 
 goog.require('Blockly.Css');
+goog.require('Blockly.WorkspaceSvg');
 goog.require('goog.dom');
 
 
@@ -117,14 +118,9 @@ Blockly.parseOptions_ = function(options) {
       hasDisable = hasCategories;
     }
   }
-  if (tree && !hasCategories) {
-    // Scrollbars are not compatible with a non-flyout toolbox.
-    var hasScrollbars = false;
-  } else {
-    var hasScrollbars = options['scrollbars'];
-    if (hasScrollbars === undefined) {
-      hasScrollbars = true;
-    }
+  var hasScrollbars = options['scrollbars'];
+  if (hasScrollbars === undefined) {
+    hasScrollbars = hasCategories;
   }
   var hasSounds = options['sounds'];
   if (hasSounds === undefined) {
@@ -139,7 +135,12 @@ Blockly.parseOptions_ = function(options) {
   Blockly.disable = hasDisable;
   Blockly.readOnly = readOnly;
   Blockly.maxBlocks = options['maxBlocks'] || Infinity;
-  Blockly.pathToBlockly = options['path'] || './';
+  if (options['media']) {
+    Blockly.pathToMedia = options['media'];
+  } else if (options['path']) {
+    // 'path' is a deprecated option which has been replaced by 'media'.
+    Blockly.pathToMedia = options['path'] + 'media/';
+  }
   Blockly.hasCategories = hasCategories;
   Blockly.hasScrollbars = hasScrollbars;
   Blockly.hasTrashcan = hasTrashcan;
@@ -260,7 +261,7 @@ Blockly.createDom_ = function(container) {
       {'width': 10, 'height': 10, 'fill': '#aaa'}, pattern);
   Blockly.createSvgElement('path',
       {'d': 'M 0 0 L 10 10 M 10 0 L 0 10', 'stroke': '#cc0'}, pattern);
-  Blockly.mainWorkspace = new Blockly.Workspace(
+  Blockly.mainWorkspace = new Blockly.WorkspaceSvg(
       Blockly.getMainWorkspaceMetrics_,
       Blockly.setMainWorkspaceMetrics_);
   svg.appendChild(Blockly.mainWorkspace.createDom());
@@ -270,7 +271,7 @@ Blockly.createDom_ = function(container) {
     // Determine if there needs to be a category tree, or a simple list of
     // blocks.  This cannot be changed later, since the UI is very different.
     if (Blockly.hasCategories) {
-      Blockly.Toolbox.createDom(svg, container);
+      Blockly.mainWorkspace.toolbox_ = new Blockly.Toolbox(svg, container);
     } else {
       /**
        * @type {!Blockly.Flyout}
@@ -282,50 +283,47 @@ Blockly.createDom_ = function(container) {
       flyout.autoClose = false;
       // Insert the flyout behind the workspace so that blocks appear on top.
       goog.dom.insertSiblingBefore(flyoutSvg, Blockly.mainWorkspace.svgGroup_);
+    }
+    if (!Blockly.hasScrollbars) {
       var workspaceChanged = function() {
-        if (Blockly.Block.dragMode_ == 0) {
+        if (Blockly.dragMode_ == 0) {
           var metrics = Blockly.mainWorkspace.getMetrics();
-          if (metrics.contentTop < 0 ||
+          var edgeLeft = metrics.viewLeft + metrics.absoluteLeft;
+          var edgeTop = metrics.viewTop + metrics.absoluteTop;
+          if (metrics.contentTop < edgeTop ||
               metrics.contentTop + metrics.contentHeight >
-              metrics.viewHeight + metrics.viewTop ||
-              metrics.contentLeft < (Blockly.RTL ? metrics.viewLeft : 0) ||
+              metrics.viewHeight + edgeTop ||
+              metrics.contentLeft <
+                  (Blockly.RTL ? metrics.viewLeft : edgeLeft) ||
               metrics.contentLeft + metrics.contentWidth > (Blockly.RTL ?
-                  metrics.viewWidth :
-                  metrics.viewWidth + metrics.viewLeft)) {
-            // One or more blocks is out of bounds.  Bump them back in.
+                  metrics.viewWidth : metrics.viewWidth + edgeLeft)) {
+            // One or more blocks may be out of bounds.  Bump them back in.
             var MARGIN = 25;
             var blocks = Blockly.mainWorkspace.getTopBlocks(false);
             for (var b = 0, block; block = blocks[b]; b++) {
               var blockXY = block.getRelativeToSurfaceXY();
               var blockHW = block.getHeightWidth();
               // Bump any block that's above the top back inside.
-              var overflow = metrics.viewTop + MARGIN - blockHW.height -
-                  blockXY.y;
+              var overflow = edgeTop + MARGIN - blockHW.height - blockXY.y;
               if (overflow > 0) {
                 block.moveBy(0, overflow);
               }
               // Bump any block that's below the bottom back inside.
-              var overflow = metrics.viewTop + metrics.viewHeight - MARGIN -
-                  blockXY.y;
+              var overflow = edgeTop + metrics.viewHeight - MARGIN - blockXY.y;
               if (overflow < 0) {
                 block.moveBy(0, overflow);
               }
               // Bump any block that's off the left back inside.
-              var overflow = MARGIN + metrics.viewLeft - blockXY.x -
-                  (Blockly.RTL ? 0 : blockHW.width);
+              var overflow = MARGIN + edgeLeft -
+                  blockXY.x - (Blockly.RTL ? 0 : blockHW.width);
               if (overflow > 0) {
                 block.moveBy(overflow, 0);
               }
               // Bump any block that's off the right back inside.
-              var overflow = metrics.viewLeft + metrics.viewWidth - MARGIN -
+              var overflow = edgeLeft + metrics.viewWidth - MARGIN -
                   blockXY.x + (Blockly.RTL ? blockHW.width : 0);
               if (overflow < 0) {
                 block.moveBy(overflow, 0);
-              }
-              // Delete any block that's sitting on top of the flyout.
-              if (block.isDeletable() && (Blockly.RTL ?
-                  blockXY.x - metrics.viewWidth : -blockXY.x) > MARGIN * 2) {
-                block.dispose(false, true);
               }
             }
           }
@@ -384,9 +382,9 @@ Blockly.init_ = function() {
   }
 
   if (Blockly.languageTree) {
-    if (Blockly.hasCategories) {
-      Blockly.Toolbox.init();
-    } else {
+    if (Blockly.mainWorkspace.toolbox_) {
+      Blockly.mainWorkspace.toolbox_.init();
+    } else if (Blockly.mainWorkspace.flyout_) {
       // Build a fixed flyout with the root blocks.
       Blockly.mainWorkspace.flyout_.init(Blockly.mainWorkspace);
       Blockly.mainWorkspace.flyout_.show(Blockly.languageTree.childNodes);
@@ -412,9 +410,13 @@ Blockly.init_ = function() {
   // Load the sounds.
   if (Blockly.hasSounds) {
     Blockly.loadAudio_(
-        ['media/click.mp3', 'media/click.wav', 'media/click.ogg'], 'click');
+        [Blockly.pathToMedia + 'click.mp3',
+         Blockly.pathToMedia + 'click.wav',
+         Blockly.pathToMedia + 'click.ogg'], 'click');
     Blockly.loadAudio_(
-        ['media/delete.mp3', 'media/delete.ogg', 'media/delete.wav'], 'delete');
+        [Blockly.pathToMedia + 'delete.mp3',
+         Blockly.pathToMedia + 'delete.ogg',
+         Blockly.pathToMedia + 'delete.wav'], 'delete');
 
     // Bind temporary hooks that preload the sounds.
     var soundBinds = [];
@@ -454,7 +456,7 @@ Blockly.updateToolbox = function(tree) {
       throw 'Existing toolbox has no categories.  Can\'t change mode.';
     }
     Blockly.languageTree = tree;
-    Blockly.Toolbox.populate_();
+    Blockly.mainWorkspace.toolbox_.populate_();
   } else {
     if (Blockly.hasCategories) {
       throw 'Existing toolbox has categories.  Can\'t change mode.';

@@ -27,8 +27,6 @@
 goog.provide('Blockly.Connection');
 goog.provide('Blockly.ConnectionDB');
 
-goog.require('Blockly.Workspace');
-
 
 /**
  * Class for a connection between blocks.
@@ -104,8 +102,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
       // block.  Since this block may be a row, walk down to the end.
       var newBlock = this.sourceBlock_;
       var connection;
-      while (connection =
-          Blockly.Connection.singleConnection_(
+      while (connection = Blockly.Connection.singleConnection_(
           /** @type {!Blockly.Block} */ (newBlock), orphanBlock)) {
         // '=' is intentional in line above.
         if (connection.targetBlock()) {
@@ -118,7 +115,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
       }
       if (orphanBlock) {
         // Unable to reattach orphan.  Bump it off to the side.
-        window.setTimeout(function() {
+        setTimeout(function() {
               orphanBlock.outputConnection.bumpAwayFrom_(otherConnection);
             }, Blockly.BUMP_DELAY);
       }
@@ -144,14 +141,17 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
         if (newBlock.nextConnection.targetConnection) {
           newBlock = newBlock.getNextBlock();
         } else {
-          newBlock.nextConnection.connect(orphanBlock.previousConnection);
-          orphanBlock = null;
+          if (orphanBlock.previousConnection.checkType_(
+              newBlock.nextConnection)) {
+            newBlock.nextConnection.connect(orphanBlock.previousConnection);
+            orphanBlock = null;
+          }
           break;
         }
       }
       if (orphanBlock) {
         // Unable to reattach orphan.  Bump it off to the side.
-        window.setTimeout(function() {
+        setTimeout(function() {
               orphanBlock.previousConnection.bumpAwayFrom_(otherConnection);
             }, Blockly.BUMP_DELAY);
       }
@@ -178,10 +178,10 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
   childBlock.setParent(parentBlock);
 
   if (parentBlock.rendered) {
-    parentBlock.svg_.updateDisabled();
+    parentBlock.updateDisabled();
   }
   if (childBlock.rendered) {
-    childBlock.svg_.updateDisabled();
+    childBlock.updateDisabled();
   }
   if (parentBlock.rendered && childBlock.rendered) {
     if (this.type == Blockly.NEXT_STATEMENT ||
@@ -249,7 +249,7 @@ Blockly.Connection.prototype.disconnect = function() {
     parentBlock.render();
   }
   if (childBlock.rendered) {
-    childBlock.svg_.updateDisabled();
+    childBlock.updateDisabled();
     childBlock.render();
   }
 };
@@ -273,7 +273,7 @@ Blockly.Connection.prototype.targetBlock = function() {
  * @private
  */
 Blockly.Connection.prototype.bumpAwayFrom_ = function(staticConnection) {
-  if (Blockly.Block.dragMode_ != 0) {
+  if (Blockly.dragMode_ != 0) {
     // Don't move blocks around while the user is doing the same.
     return;
   }
@@ -346,9 +346,9 @@ Blockly.Connection.prototype.highlight = function() {
             tabWidth + ',-2.5 ' + tabWidth + ',7.5 v 5';
   } else {
     if (Blockly.RTL) {
-      steps = 'm 20,0 h -5 l -6,4 -3,0 -6,-4 h -5';
+      steps = 'm 20,0 h -5 ' + Blockly.BlockSvg.NOTCH_PATH_RIGHT + ' h -5';
     } else {
-      steps = 'm -20,0 h 5 l 6,4 3,0 6,-4 h 5';
+      steps = 'm -20,0 h 5 ' + Blockly.BlockSvg.NOTCH_PATH_LEFT + ' h 5';
     }
   }
   var xy = this.sourceBlock_.getRelativeToSurfaceXY();
@@ -448,6 +448,7 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
    * @return {boolean} True if the search needs to continue: either the current
    *     connection's vertical distance from the other connection is less than
    *     the allowed radius, or if the connection is not compatible.
+   * @private
    */
   function checkConnection_(yIndex) {
     var connection = db[yIndex];
@@ -486,6 +487,7 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
       targetSourceBlock = targetSourceBlock.getParent();
     } while (targetSourceBlock);
 
+    // Only connections within the maxLimit radius.
     var dx = currentX - db[yIndex].x_;
     var dy = currentY - db[yIndex].y_;
     var r = Math.sqrt(dx * dx + dy * dy);

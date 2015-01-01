@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 # Compresses the core Blockly files into a single JavaScript file.
 #
 # Copyright 2012 Google Inc.
@@ -37,6 +37,7 @@
 
 import errno, glob, httplib, json, os, re, subprocess, sys, threading, urllib
 
+
 def import_path(fullpath):
   """Import a file with full path specification.
   Allows one to import from any directory, something __import__ does not do.
@@ -51,7 +52,7 @@ def import_path(fullpath):
   filename, ext = os.path.splitext(filename)
   sys.path.append(path)
   module = __import__(filename)
-  reload(module) # Might be out of date
+  reload(module)  # Might be out of date.
   del sys.path[-1]
   return module
 
@@ -126,11 +127,11 @@ delete window.BLOCKLY_BOOT;
 };
 
 // Delete any existing Closure (e.g. Soy's nogoog_shim).
-document.write('<script type="text/javascript">var goog = undefined;</script>');
+document.write('<script>var goog = undefined;</script>');
 // Load fresh Closure Library.
-document.write('<script type="text/javascript" src="' + window.BLOCKLY_DIR +
+document.write('<script src="' + window.BLOCKLY_DIR +
     '/../closure-library/closure/goog/base.js"></script>');
-document.write('<script type="text/javascript">window.BLOCKLY_BOOT()</script>');
+document.write('<script>window.BLOCKLY_BOOT()</script>');
 """)
     f.close()
     print('SUCCESS: ' + target_filename)
@@ -253,17 +254,18 @@ class Gen_compressed(threading.Thread):
     if json_data.has_key('serverErrors'):
       errors = json_data['serverErrors']
       for error in errors:
-        print 'SERVER ERROR: %s' % target_filename
-        print error['error']
+        print('SERVER ERROR: %s' % target_filename)
+        print(error['error'])
     elif json_data.has_key('errors'):
       errors = json_data['errors']
       for error in errors:
         print('FATAL ERROR')
         print(error['error'])
-        print('%s at line %d:' % (
-            file_lookup(error['file']), error['lineno']))
-        print(error['line'])
-        print((' ' * error['charno']) + '^')
+        if error['file']:
+          print('%s at line %d:' % (
+              file_lookup(error['file']), error['lineno']))
+          print(error['line'])
+          print((' ' * error['charno']) + '^')
         sys.exit(1)
     else:
       if json_data.has_key('warnings'):
@@ -271,10 +273,11 @@ class Gen_compressed(threading.Thread):
         for warning in warnings:
           print('WARNING')
           print(warning['warning'])
-          print('%s at line %d:' % (
-              file_lookup(warning['file']), warning['lineno']))
-          print(warning['line'])
-          print((' ' * warning['charno']) + '^')
+          if warning['file']:
+            print('%s at line %d:' % (
+                file_lookup(warning['file']), warning['lineno']))
+            print(warning['line'])
+            print((' ' * warning['charno']) + '^')
         print()
 
       if not json_data.has_key('compiledCode'):
@@ -321,7 +324,7 @@ class Gen_compressed(threading.Thread):
         print('Size changed from %d KB to %d KB (%d%%).' % (
             original_kb, compressed_kb, ratio))
       else:
-        print 'UNKNOWN ERROR'
+        print('UNKNOWN ERROR')
 
 
 class Gen_langfiles(threading.Thread):
@@ -338,7 +341,7 @@ class Gen_langfiles(threading.Thread):
     try:
       return (max(os.path.getmtime(src) for src in srcs) >
               min(os.path.getmtime(dest) for dest in dests))
-    except OSError, e:
+    except OSError as e:
       # Was a file not found?
       if e.errno == errno.ENOENT:
         # If it was a source file, we can't proceed.
@@ -363,7 +366,7 @@ class Gen_langfiles(threading.Thread):
             '--input_file', 'msg/messages.js',
             '--output_dir', 'msg/json/',
             '--quiet'])
-      except (subprocess.CalledProcessError, OSError), e:
+      except (subprocess.CalledProcessError, OSError) as e:
         # Documentation for subprocess.check_call says that CalledProcessError
         # will be raised on failure, but I found that OSError is also possible.
         print('Error running i18n/js_to_json.py: ', e)
@@ -387,7 +390,7 @@ class Gen_langfiles(threading.Thread):
                     (file.endswith(('keys.json', 'synonyms.json', 'qqq.json')))]
       cmd.extend(json_files)
       subprocess.check_call(cmd)
-    except (subprocess.CalledProcessError, OSError), e:
+    except (subprocess.CalledProcessError, OSError) as e:
       print('Error running i18n/create_messages.py: ', e)
       sys.exit(1)
 
