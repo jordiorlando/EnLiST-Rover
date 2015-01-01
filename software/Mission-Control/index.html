@@ -3,7 +3,7 @@
 
 <head>
 
-	<title>STELLARS Outpost</title>
+	<title>STELLArS Outpost</title>
 
 	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
@@ -33,6 +33,9 @@
 		a {
 			text-decoration: none;
 		}
+		img {
+			padding: 2.5% 12.5% 2.5% 12.5%;
+		}
 		core-header-panel {
 			background-color: #FFFFFF;
 			overflow: auto;
@@ -40,6 +43,9 @@
 		}
 		core-scaffold core-toolbar {
 			background-color: #2196F3;
+		}
+		core-scaffold #main core-header-panel {
+			background: #FFFFFF;
 		}
 		paper-item {
 			color: #000000;
@@ -96,8 +102,8 @@
 				</paper-menu-button>
 			</div>
 
-			<div fit>
-				Hello astronaut, welcome to Mission Control
+			<div fit style="text-align:center">
+				<img src="logo.jpg" width="75%">
 			</div>
 		</core-scaffold>
 
