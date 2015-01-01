@@ -15,6 +15,13 @@ core-header-panel {
 	overflow: auto;
 	-webkit-overflow-scrolling: touch;
 }
+core-scaffold::shadow core-toolbar {
+	background-color: #2196F3;
+}
+
+core-scaffold::shadow core-header-panel {
+	background: #FFFFFF;
+}
 core-scaffold core-toolbar {
 	background-color: #2196F3;
 }
