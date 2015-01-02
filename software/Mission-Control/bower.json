@@ -20,6 +20,7 @@
     "paper-elements": "polymer/paper-elements#~0.5.1",
     "core-elements": "polymer/core-elements#~0.5.1",
     "blockly": "google/blockly",
-    "Chart.js": "nnnick/Chart.js#~0.2.0"
+    "Chart.js": "nnnick/Chart.js#~0.2.0",
+    "director": "flatiron/director#~1.2.5"
   }
 }
