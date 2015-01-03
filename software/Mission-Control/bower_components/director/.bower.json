@@ -14,7 +14,6 @@
     "commit": "ccc6b8df8bf440876e0985b89ffb13a0c5d15923"
   },
   "_source": "git://github.com/flatiron/director.git",
-  "_target": "~1.2.5",
-  "_originalSource": "flatiron/director",
-  "_direct": true
+  "_target": "*",
+  "_originalSource": "flatiron/director"
 }
