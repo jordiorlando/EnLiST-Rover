@@ -37,7 +37,8 @@ http://ami.responsivedesign.is/<br>
 http://www.google.com/design/spec/material-design/introduction.html<br>
 https://www.polymer-project.org/<br>
 https://developers.google.com/blockly/<br>
-https://github.com/nnnick/Chart.js
+https://github.com/nnnick/Chart.js<br>
+https://github.com/flatiron/director
 
 http://maklesoft.github.io/padlock/<br>
 https://github.com/MaKleSoft/shape-shifter<br>

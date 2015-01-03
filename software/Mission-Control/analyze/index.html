@@ -58,15 +58,17 @@
 			</div>
 
 			<div fit>
-				<canvas id="chart1" height="400" width="600"></canvas>
-				<!--<div id="legend1"></div>-->
+				<canvas id="tempChart" height="400" width="600"></canvas>
+				<!--<div id="tempLegend"></div>-->
 
 				<script>
-					var lineChartData1 = {
+					//Chart.defaults.global.responsive = true;
+
+					var tempChartData = {
 						labels : ["January","February","March","April","May","June","July"],
 						datasets: [
 							{
-								label: "My First dataset",
+								label: "Ambient Temp",
 								fillColor: "rgba(220,220,220,0.2)",
 								strokeColor: "rgba(220,220,220,1)",
 								pointColor: "rgba(220,220,220,1)",
@@ -76,7 +78,7 @@
 								data: [65, 59, 80, 81, 56, 55, 40]
 							},
 							{
-								label: "My Second dataset",
+								label: "Object Temp",
 								fillColor: "rgba(151,187,205,0.2)",
 								strokeColor: "rgba(151,187,205,1)",
 								pointColor: "rgba(151,187,205,1)",
@@ -89,9 +91,10 @@
 
 					}
 
-					var myLine1 = new Chart(document.getElementById("chart1").getContext("2d")).Line(lineChartData1);
+					var ctx = document.getElementById("tempChart").getContext("2d");
+					var tempChart = new Chart(ctx).Line(tempChartData);
 
-					//legend(document.getElementById('legend1'), lineChartData1);
+					//legend(document.getElementById('tempLegend'), tempChartData);
 				</script>
 			</div>
 		</core-scaffold>
