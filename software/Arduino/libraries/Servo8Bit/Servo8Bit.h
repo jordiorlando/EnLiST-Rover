@@ -31,7 +31,7 @@
 
    attach(pin)           - Attaches a servo motor to an i/o pin.
    attach(pin, min, max) - Attaches to a pin setting min and max values in microseconds
-                           default min is 544, max is 2400
+						   default min is 544, max is 2400
 
    write()               - Sets the servo angle in degrees.  (invalid angle that is valid as pulse in microseconds is treated as microseconds)
    writeMicroseconds()   - Sets the servo pulse width in microseconds
