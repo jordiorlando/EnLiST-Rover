@@ -1,30 +1,29 @@
 #include "videoSocket.h"
 
-videoSocket::videoSocket(int port) : genericSocket(port, false) {}
+videoSocket::videoSocket(int port, streamSocket & ss) :
+    tcpSocket(port, false), streamOut(&ss) {}
 
 void videoSocket::handleConnection(int socketfd)
 {
 
-    //TODO: interpret video header data (if necessary)
-    //      and send the output out of all connected clients
-    //      which are stored in an int list of socketfds
+    ssize_t bytes_received, total_bytes;
+    unsigned char * incoming_data_buffer = (unsigned char*)malloc(2001);
 
-    std::cout << "fd " << socketfd << std::endl;
-   
-    ssize_t bytes_recieved, total_bytes;
-    char incoming_data_buffer[1000];
-    while((bytes_recieved = read(socketfd, incoming_data_buffer, 1000)) > 0)
+    //datatype byte (video feed)
+    incoming_data_buffer[0] = 0x1;
+
+    while((bytes_received = read(socketfd, incoming_data_buffer + 1, 2000)) > 0)
     {
-    std::cout << bytes_recieved << " bytes recieved :" << std::endl;
-    incoming_data_buffer[bytes_recieved] = '\0';
-    std::cout << incoming_data_buffer << std::endl;
+        streamOut->sendToAll(incoming_data_buffer, bytes_received + 1);
     }
-    
-    if (bytes_recieved < 0)
+
+    std::cout << "0 end" << std::endl;
+
+    if (bytes_received < 0)
         std::cout << "recv()" << std::endl; //recv() error
-    
-    
-    std::cout << "closing socket" << std::endl;
+
+    free(incoming_data_buffer);
+
     close(socketfd);
 
 }

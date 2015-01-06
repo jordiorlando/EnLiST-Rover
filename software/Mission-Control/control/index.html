@@ -3,86 +3,452 @@
 
 <head>
 
-	<title>STELLArS Outpost</title>
+    <title>STELLArS Outpost</title>
 
-	<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
-	<script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
+    <script src="../bower_components/webcomponentsjs/webcomponents.min.js"></script>
 
-	<link rel="stylesheet" href="../style.css" shim-shadowdom>
+    <script src="/jquery.min.js"></script>
+    <script src="/jsmpeg.js"></script>
+    <script src="/bower_components/Chart.js/Chart.js"></script>
 
-	<link rel="import" href="../bower_components/font-roboto/roboto.html">
-	<link rel="import" href="../bower_components/core-icons/core-icons.html">
-	<link rel="import" href="../bower_components/core-menu/core-menu.html">
-	<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
-	<link rel="import" href="../bower_components/core-header-panel/core-header-panel.html">
-	<link rel="import" href="../bower_components/core-scaffold/core-scaffold.html">
-	<link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
-	<link rel="import" href="../bower_components/paper-item/paper-item.html">
-	<link rel="import" href="../bower_components/paper-dropdown/paper-dropdown.html">
-	<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
-	<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+    <link rel="stylesheet" href="../style.css" shim-shadowdom>
+
+    <link rel="import" href="../bower_components/font-roboto/roboto.html">
+    <link rel="import" href="../bower_components/core-icons/core-icons.html">
+    <link rel="import" href="../bower_components/core-menu/core-menu.html">
+    <link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
+    <link rel="import" href="../bower_components/core-header-panel/core-header-panel.html">
+    <link rel="import" href="../bower_components/core-scaffold/core-scaffold.html">
+    <link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
+    <link rel="import" href="../bower_components/paper-item/paper-item.html">
+    <link rel="import" href="../bower_components/paper-dropdown/paper-dropdown.html">
+    <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+
+    <script>
+        var gamepad, lasttimestamp;
+        var ws, player;
+
+        var devices = {
+            0x18: { /* ambient temperature */
+                connected: false,
+                temperature: 0.0,
+                parseData: function (data, start) {
+                    this.temperature = ((data[start + 1] & 0x0F) << 8) | data[start];
+                    this.temperature /= 16.0;
+                    if (data[start + 1] & 0x10) this.temperature -= 256;
+                    return 2;
+                }
+            },
+            0x5A: { /* ir temp */
+                connected: false,
+                ambient: 0.0,
+                obj: 0.0,
+                parseData: function (data, start) {
+                    this.ambient = (data[start] << 8) | data[start + 1];
+                    this.obj = (data[start + 2] << 8) | data[start + 2];
+
+                    this.ambient = this.ambient * 0.02 - 273.15;
+                    this.obj = this.obj * 0.02 - 273.15;
+
+                    return 4;
+                }
+            },
+            0x29: { /* color */
+                connected: false,
+                color_r: 0,
+                color_g: 0,
+                color_b: 0,
+                color_c: 0,
+                parseData: function (data, start) {
+                    this.color_r = (data[start + 0] << 8) | data[start + 1];
+                    this.color_g = (data[start + 2] << 8) | data[start + 3];
+                    this.color_b = (data[start + 4] << 8) | data[start + 5];
+                    this.color_c = (data[start + 6] << 8) | data[start + 7];
+                    return 8;
+                }
+            },
+            0x68: { /* imu */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x40: { /* humidity */
+                connected: false,
+                parseData: function (data, start) {
+                    /*
+                    buf[0] = (data.humidity >> 8) & 0xFF;
+                    buf[1] = (data.humidity >> 0) & 0xFF;
+                    buf[2] = (data.temperature >> 8) & 0xFF;
+                    buf[3] = (data.temperature >> 0) & 0xFF;
+                    */
+                    return 4;
+                }
+            },
+            0x77: { /* pressure */
+                connected: false,
+                parseData: function (data, start) {
+                    /*
+                    buf[0] = (data.temperature >> 24) & 0xFF;
+                    buf[1] = (data.temperature >> 16) & 0xFF;
+                    buf[2] = (data.temperature >> 8 ) & 0xFF;
+                    buf[3] = (data.temperature >> 0 ) & 0xFF;
+                    buf[4] = (data.pressure >> 24) & 0xFF;
+                    buf[5] = (data.pressure >> 16) & 0xFF;
+                    buf[6] = (data.pressure >> 8 ) & 0xFF;
+                    buf[7] = (data.pressure >> 0 ) & 0xFF;
+                    */
+                    return 8;
+                }
+            },
+            0x60: { /* light */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x42: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x43: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x44: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x45: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x46: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            },
+            0x47: { /* motor */
+                connected: false,
+                parseData: function (data, start) {
+                    return 0;
+                }
+            }
+        }
+
+        function parseData(data, start)
+        {
+            if (start >= data.length) return;
+
+            //status+bank
+            //address
+            //[data]
+
+            var addr, len;
+            addr = data[start + 1];
+            if (!devices[addr])
+            {
+                console.log("device not recognized");
+                return;
+            }
+
+            devices[addr].connected = data[start] & 0xF0;
+            len = 2 + devices[addr].parseData(data, start + 2);
+
+            parseData(data, start + len);
+        }
+
+        function setUpChart(type)
+        {
+            charttype = type;
+
+            Chart.defaults.global.responsive = true;
+            Chart.defaults.global.tooltipFontFamily = "'RobotoDraft', sans-serif";
+            Chart.defaults.global.tooltipTitleFontFamily = "'RobotoDraft', sans-serif";
+            //Chart.defaults.global.tooltipTitleFontSize = 16;
+            //Chart.defaults.global.tooltipTitleFontStyle = "normal";
+            Chart.defaults.global.tooltipFillColor = "rgba(0,0,0,0.54)";
+            //Chart.defaults.global.animationEasing = "easeOutBack";
+
+            var chartData = {
+                labels : ["","","","","","","","","",""],
+                datasets: [
+            {
+                label: "Temperature",
+                fillColor: "rgba(105,145,231,0.2)",
+                strokeColor: "rgba(105,145,231,1)",
+                pointColor: "rgba(105,145,231,1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(180,180,180,1)",
+                data: [0,0,0,0,0,0,0,0,0,0]
+            },
+        {
+            label: "IR Temperature",
+            fillColor: "rgba(110,224,108,0.2)",
+            strokeColor: "rgba(130,224,108,1)",
+            pointColor: "rgba(130,224,108,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(180,180,180,1)",
+            data: [0,0,0,0,0,0,0,0,0,0]
+        },
+    {
+        label: "IR Object",
+        fillColor: "rgba(230,52,52,0.2)",
+        strokeColor: "rgba(203,52,52,1)",
+        pointColor: "rgba(203,52,52,1)",
+        pointStrokeColor: "#fff",
+        pointHighlightFill: "#fff",
+        pointHighlightStroke: "rgba(180,180,180,1)",
+        data: [0,0,0,0,0,0,0,0,0,0]
+    },
+    ]
+    };
+
+    chartOptions = {
+        animation: false,
+        scaleOverride: true,
+        scaleSteps: 30,
+        scaleStartValue: -5,
+        scaleStepWidth: 2,
+        legendTemplate : '<ul style="list-style-type:none">'
+            +'<% for (var i=0; i<datasets.length; i++) { %>'
+            +'<li>'
+                +'<svg height="12" width="12" vertical-align="middle">'
+                    +'<circle cx="6" cy="6" r="6" stroke="#000" stroke-width="0" fill=\"<%=datasets[i].strokeColor%>\" />'
+                        +'</svg> '
+                        +'<span style="opacity:0.87">'
+                            +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
+                            +'</span>'
+                            +'</li>'
+                            +'<% } %>'
+                            +'</ul>'
+                        }
+
+                        chart = new Chart(document.getElementById("chartcanv").getContext("2d")).Line(chartData, chartOptions);
+
+        }
+
+        function updateText()
+        {
+            chart.addData([devices[0x18].temperature, devices[0x5a].ambient, devices[0x5a].obj], "");
+            chart.removeData();
+
+            var summary = "";
+            if (devices[0x18].connected)
+            {
+                summary += "Ambient temperature: " + devices[0x18].temperature + "\n";
+            }
+            else
+            {
+                summary += "Ambient temperature: DISCONNECTED\n";
+            }
+            for (var i=0;i<6;i++)
+            {
+                if (devices[0x42 + i].connected)
+                    summary += "Motor " + i + " connected.\n";
+                else
+                    summary += "Motor " + i + " DISCONNECTED.\n";
+            }
+            if (devices[0x5a].connected)
+            {
+                summary += "IR object temperature: " + devices[0x5a].obj + "\n";
+                summary += "IR ambient temperature: " + devices[0x5a].ambient + "\n";
+            }
+            else
+            {
+                summary += "IR object temperature: DISCONNECTED\n";
+                summary += "IR ambient temperature: DISCONNECTED\n";
+            }
+
+            summary += "Color(rgbc): (" + devices[0x29].color_r
+            +  ", " + devices[0x29].color_g
+            +  ", " + devices[0x29].color_b
+            +  ", " + devices[0x29].color_c
+            +  ")\n";
+            $("#history").val(summary);
+        }
+
+        function init() {
+
+            ws = new WebSocket("ws://10.10.0.1:5556");
+
+            ws.onopen = function() { }
+
+            ws.onclose = function() {
+                $("#history").append("DISCONNECTED.\n");
+            }
+
+            ws.onmessage = function(evt) {
+                var msgdata = new Uint8Array(evt.data);
+                if (msgdata[0] == 0x1) //video
+                {
+                    player.receiveSocketMessage(msgdata.subarray(1));
+                }
+                else
+                {
+                    parseData(msgdata, 1);
+                    updateText();
+                }
+            }
+
+            player = new jsmpeg(ws, {canvas:document.getElementById('videocanv')});
+
+            //useful for testing:
+            //http://luser.github.io/gamepadtest/
+
+            setUpChart();
+
+            window.requestAnimationFrame(sendData);
+
+        }
+
+        var cnt = 0;
+
+        function sendData()
+        {
+            //throttle loop speed
+            if (++cnt == 3)
+            {
+                cnt = 0;
+            }
+            else
+            {
+                window.requestAnimationFrame(sendData);
+                return;
+            }
+
+            //get the first gamepad
+            for (var i=0; i<4; i++)
+            {
+                gamepad = navigator.getGamepads()[i];
+                if (gamepad) break;
+            }
+
+            //send data if there is any
+            if (gamepad && gamepad.timestamp != lasttimestamp)
+            {
+                lasttimestamp = gamepad.timestamp;
+
+                var data = new Uint8Array(6);
+
+                data[0] = 0;
+                data[0] |= gamepad.buttons[0].pressed << 0;  //square
+                data[0] |= gamepad.buttons[1].pressed << 1;  //cross
+                data[0] |= gamepad.buttons[2].pressed << 2;  //circle
+                data[0] |= gamepad.buttons[3].pressed << 3;  //triangle
+                data[0] |= gamepad.buttons[4].pressed << 4;  //l1
+                data[0] |= gamepad.buttons[5].pressed << 5;  //r1
+                data[0] |= gamepad.buttons[6].pressed << 6;  //l2
+                data[0] |= gamepad.buttons[7].pressed << 7;  //r2
+
+                data[1] = 0;
+                data[1] |= gamepad.buttons[8].pressed << 0;  //select
+                data[1] |= gamepad.buttons[9].pressed << 1;  //start
+                data[1] |= gamepad.buttons[10].pressed << 2; //left stick press
+                data[1] |= gamepad.buttons[11].pressed << 3; //right stick press
+                //data[1] |= gamepad.buttons[12].pressed << 4; //d up
+                //data[1] |= gamepad.buttons[13].pressed << 5; //d down
+                //data[1] |= gamepad.buttons[14].pressed << 6; //d left
+                //data[1] |= gamepad.buttons[15].pressed << 7; //d right
+
+                //(gamepad.axes[0] + 1) / 2 * 0xFF;
+                //(gamepad.axes[1] + 1) / 2 * 0xFF;
+                //(gamepad.axes[2] + 1) / 2 * 0xFF;
+                //(gamepad.axes[3] + 1) / 2 * 0xFF;
+
+                //clip to circle
+                var x, y, v, w;
+
+                x = gamepad.axes[0], y = gamepad.axes[1];
+                v = y, w = x;
+                if (Math.sqrt(x * x + y * y) > 1)
+                {
+                    v = y/Math.sqrt(x * x + y * y);
+                    w = x/Math.sqrt(x * x + y * y);
+                }
+
+                data[2] = ( w + 1) / 2 * 0xFF; //left x
+                data[3] = (-v + 1) / 2 * 0xFF; //left y
+
+                x = gamepad.axes[2], y = gamepad.axes[3];
+                v = y, w = x;
+                if (Math.sqrt(x * x + y * y) > 1)
+                {
+                    v = y/Math.sqrt(x * x + y * y);
+                    w = x/Math.sqrt(x * x + y * y);
+                }
+
+                data[4] = ( w + 1) / 2 * 0xFF; //right x
+                data[5] = (-v + 1) / 2 * 0xFF; //right y
+
+                //console.log(data[2] + ", " + data[3]);
+
+                if (ws.readyState == 1) ws.send(data.buffer);
+                //console.log(data);
+            }
+
+            window.requestAnimationFrame(sendData);
+        }
+    </script>
 
 </head>
 
 <body unresolved fullbleed>
 
-	<template is="auto-binding">
+    <template is="auto-binding">
 
-		<core-scaffold>
-			<core-header-panel navigation flex mode="seamed">
-				<core-toolbar id="mainheader"><a href="../index.html" class="inherit">Mission Control</a></core-toolbar>
-				<core-menu theme="core-light-theme" selected="1">
-					<paper-item><a href="../plan/index.html" class="inherit">Plan</a></paper-item>
-					<paper-item><a href="../control/index.html" class="inherit">Control</a></paper-item>
-					<paper-item><a href="../analyze/index.html" class="inherit">Analyze</a></paper-item>
-				</core-menu>
-			</core-header-panel>
-			<div tool flex>Control</div>
-			<div tool>
-				<paper-icon-button icon="help"></paper-icon-button>
-			</div>
-			<div tool>
-				<paper-menu-button>
-					<paper-icon-button icon="more-vert"></paper-icon-button>
-					<paper-dropdown class="dropdown" halign="right">
-						<core-menu class="menu">
-							<paper-item>Menu Item 1</paper-item>
-							<paper-item>Menu Item 2</paper-item>
-							<paper-item>Menu Item 3</paper-item>
-						</core-menu>
-					</paper-dropdown>
-				</paper-menu-button>
-			</div>
+        <core-scaffold>
+            <core-header-panel navigation flex mode="seamed">
+                <core-toolbar id="mainheader"><a href="../index.html" class="inherit">Mission Control</a></core-toolbar>
+                <core-menu theme="core-light-theme" selected="1">
+                    <paper-item><a href="../plan/index.html" class="inherit">Plan</a></paper-item>
+                    <paper-item><a href="../control/index.html" class="inherit">Control</a></paper-item>
+                    <paper-item><a href="../analyze/index.html" class="inherit">Analyze</a></paper-item>
+                </core-menu>
+            </core-header-panel>
+            <div tool flex>Control</div>
+            <div tool>
+                <paper-icon-button icon="help"></paper-icon-button>
+            </div>
+            <div tool>
+                <paper-menu-button>
+                    <paper-icon-button icon="more-vert"></paper-icon-button>
+                    <paper-dropdown class="dropdown" halign="right">
+                        <core-menu class="menu">
+                            <paper-item>Menu Item 1</paper-item>
+                            <paper-item>Menu Item 2</paper-item>
+                            <paper-item>Menu Item 3</paper-item>
+                        </core-menu>
+                    </paper-dropdown>
+                </paper-menu-button>
+            </div>
 
-			<div fit>
-				<iframe seamless="" src="http://www.html5rocks.com/en/tutorials/doodles/gamepad/gamepad-tester/tester.html">
-					#document
-						<!DOCTYPE html>
-						<html>
-							<head>
-								<title></title>
-								<meta charset="utf-8"></meta>
-								<script src="gamepad.js"></script>
-								<script src="tester.js"></script>
-								<link rel="stylesheet" href="styles.css"></link>
-							</head>
-							<body class="iframe">
-								<h1></h1>
-								<h2></h2>
-								<div id="menu"></div>
-								<div id="no-gamepad-support"></div>
-								<div id="no-gamepads-connected" class="visible"></div>
-								<ul id="gamepads"></ul>
-								<script></script>
-							</body>
-						</html>
-					</html>
-				</iframe>
-			</div>
-		</core-scaffold>
+            <div fit>
+                <textarea id="history" rows="10" cols="100"></textarea>
 
-	</template>
+                <canvas id="chartcanv" height="200" width="400"></canvas>
+
+                <canvas id="videocanv" width="960" height="540"></canvas>
+
+                <script>init();</script>
+            </div>
+        </core-scaffold>
+
+    </template>
 
 </body>
 
