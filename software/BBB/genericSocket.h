@@ -11,6 +11,8 @@
 #include <sys/socket.h> // Needed for the socket functions
 #include <sys/types.h>
 
+#include <errno.h>
+
 //addresses
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -27,11 +29,13 @@ class genericSocket
         void openSocket();
         void closeSocket();
         void acceptConnections();
-        
-        int port;       
-        int listenfd;   
+
+        int port;
+        int listenfd;
         bool threaded;
-        
+
+        bool closed;
+
         std::vector<std::thread> threads;
 };
 
