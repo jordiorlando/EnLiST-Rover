@@ -32,6 +32,7 @@ float fMastPan = 0;
 // Flags for drawing the rover's turn radius and velocity
 boolean bDrawRoverRadius = true;
 boolean bDrawVelocity = true;
+boolean bDrawRoverRotation = true;
 
 // Wheel array
 Wheel[] wheels = new Wheel[6];
@@ -121,7 +122,9 @@ public void draw() {
 	if (bDriveMode) {
 		drawBody();
 		drawMast();
-		drawRotation();
+		if (bDrawRoverRotation) {
+			drawRotation();
+		}
 	} else {
 		if (bDrawRoverRadius) {
 			drawRadius();
@@ -173,7 +176,10 @@ void mousePressed() {
 	}
 
 	if (bDriveMode) {
-
+		if ((mouseX > 10) && (mouseX < 100) && (mouseY > 20) && (mouseY < 40)) {
+			// Check to see if the mouse is over the rotation display
+			bDrawRoverRotation = !bDrawRoverRotation;
+		}
 	} else {
 		if ((mouseX > 10) && (mouseX < 100) && (mouseY > 20) && (mouseY < 40)) {
 			// Check to see if the mouse is over the radius display
