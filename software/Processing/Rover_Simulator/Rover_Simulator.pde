@@ -29,10 +29,10 @@ boolean bDriveMode = false;
 boolean bMastMode = false;
 // Angle of the mast
 float fMastPan = 0;
-// Flags for drawing the rover's turn radius and velocity
-boolean bDrawRoverRadius = true;
-boolean bDrawVelocity = true;
-boolean bDrawRoverRotation = true;
+// Toggles for drawing the rover's turn radius and velocity
+RadioButton drawRoverRadius = new RadioButton(15, 30, 5);
+RadioButton drawRoverVelocity = new RadioButton(15, 50, 5);
+RadioButton drawRoverRotation = new RadioButton(15, 30, 5);
 
 // Wheel array
 Wheel[] wheels = new Wheel[6];
@@ -43,6 +43,7 @@ public void setup() {
 	// Define the font and use it
 	f = createFont("Source Code Pro", 16, true);
 	textFont(f, 16);
+	textAlign(LEFT, CENTER);
 
 	// Initialise the ControlIO
 	control = ControlIO.getInstance(this);
@@ -60,6 +61,11 @@ public void setup() {
 	// Register a listener so that changeMastMode() is called every time the
 	// right stick is pressed.
 	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
+
+	// Initialize radio buttons
+	drawRoverRadius.bPressed = true;
+	drawRoverVelocity.bPressed = true;
+	drawRoverRotation.bPressed = true;
 
 	// Wheel declarations
 	wheels[0] = new Wheel(true, -150, 200);
@@ -122,16 +128,16 @@ public void draw() {
 	if (bDriveMode) {
 		drawBody();
 		drawMast();
-		if (bDrawRoverRotation) {
+		if (drawRoverRotation.pressed()) {
 			drawRotation();
 		}
 	} else {
-		if (bDrawRoverRadius) {
+		if (drawRoverRadius.pressed()) {
 			drawRadius();
 		}
 		drawBody();
 		drawMast();
-		if (bDrawVelocity) {
+		if (drawRoverVelocity.pressed()) {
 			drawVelocity();
 		}
 	}
@@ -144,23 +150,25 @@ public void draw() {
 	popMatrix();
 
 	// Display important information
-	textAlign(LEFT);
+	fill(48, 48, 48);
 	if (bDriveMode) {
-		text("Drive Mode: 1", 10, 20);
-		text("Rotation: " + fRoverRotation, 10, 40);
+		text("Drive Mode: 1", 10, 10);
+		drawRoverRotation.draw("Rotation: " + fRoverRotation);
 	} else {
-		text("Drive Mode: 0", 10, 20);
-		text("Radius: " + fRoverRadius, 10, 40);
-		text("Velocity: " + fRoverVelocity, 10, 60);
-		text("Radius Factor: " + fRadiusFactor, 10, 80);
+		text("Drive Mode: 0", 10, 10);
+		drawRoverRadius.draw("Radius: " + fRoverRadius);
+		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
+		text("Radius Factor: " + fRadiusFactor, 10, height - 35);
 	}
-	float fRightTextWidth = textWidth("Mast Pan: -360o") + 10;
+	fill(48, 48, 48);
+	strokeWeight(2);
+	float fRightTextWidth = textWidth("Mast Pan: -360" + (char)0x00B0) + 10;
 	if (bMastMode) {
-		text("Mast Mode: 1", width - fRightTextWidth, 20);
+		text("Mast Mode: 1", width - fRightTextWidth, 10);
 	} else {
-		text("Mast Mode: 0", width - fRightTextWidth, 20);
+		text("Mast Mode: 0", width - fRightTextWidth, 10);
 	}
-	text("Mast Pan: " + String.format("%.0f", fMastPan * 360) + (char)0x00B0, width - fRightTextWidth, 40);
+	text("Mast Pan: " + String.format("%.0f", fMastPan * 360) + (char)0x00B0, width - fRightTextWidth, 30);
 
 	// Draw console
 	drawConsole();
@@ -176,17 +184,14 @@ void mousePressed() {
 	}
 
 	if (bDriveMode) {
-		if ((mouseX > 10) && (mouseX < 100) && (mouseY > 20) && (mouseY < 40)) {
-			// Check to see if the mouse is over the rotation display
-			bDrawRoverRotation = !bDrawRoverRotation;
+		if (drawRoverRotation.over()) {
+			drawRoverRotation.toggle();
 		}
 	} else {
-		if ((mouseX > 10) && (mouseX < 100) && (mouseY > 20) && (mouseY < 40)) {
-			// Check to see if the mouse is over the radius display
-			bDrawRoverRadius = !bDrawRoverRadius;
-		} else if ((mouseX > 10) && (mouseX < 100) && (mouseY > 40) && (mouseY < 60)) {
-			// Check to see if the mouse is over the velocity display
-			bDrawVelocity = !bDrawVelocity;
+		if (drawRoverRadius.over()) {
+			drawRoverRadius.toggle();
+		} else if (drawRoverVelocity.over()) {
+			drawRoverVelocity.toggle();
 		}
 	}
 
@@ -253,8 +258,7 @@ void drawConsole() {
 		fill(255, 255, 255, 64);
 	}
 	// Draw console text
-	textAlign(LEFT);
-	text(">> " + sInputString, 2, height - 4);
+	text(">> " + sInputString, 2, height - 12);
 }
 
 // Draws a circle that represents the path that the center of the rover will
@@ -351,169 +355,4 @@ float maxRadius(float fRadius) {
 	}
 
 	return max(fRadii);
-}
-
-// Wheel class. Stores permanent data about each wheel, and is also responsible
-// for calculating all the required numbers. It also takes care of drawing
-// itself.
-class Wheel {
-	// Determines whether this wheel is capable of rotating or not
-	boolean bSteerable;
-	// The horizontal and vertical offsets from the center of the wheel
-	float fXPos, fYPos;
-	// The three variables that define the motion of the wheel
-	float fAngle, fRadius, fVelocity;
-
-	boolean bDrawRadius = false;
-
-	// Constructor. Takes an input to determine whether or not it is steerable
-	// as well as its horizontal and vertical offsets from the center of the
-	// rover.
-	Wheel(boolean bSteerableTemp, float fXTemp, float fYTemp) {
-		bSteerable = bSteerableTemp;
-		fXPos = fXTemp;
-		fYPos = fYTemp;
-	}
-
-	// Calculates the angle for the wheel in radians using the global variables.
-	float angle() {
-		if (bDriveMode) {
-			// Angle is always the same when in mode 1
-			if (!bSteerable || (fYPos == 0)) {
-				fAngle = 0;  // Non-steerable wheels always face forward
-			} else if (fXPos * fYPos > 0) {
-				fAngle = -atan(fXPos/fYPos) + HALF_PI;
-			} else {
-				fAngle = -atan(fXPos/fYPos) - HALF_PI;
-			}
-		} else {
-			// In mode 0, angle depends on the global rover radius
-			if (!bSteerable || (fYPos == 0)) {
-				fAngle = 0;  // Non-steerable wheels always face forward
-			} else if (fRoverRadius * fYPos > 0) {
-				fAngle = -atan((fRoverRadius + fXPos)/fYPos) + HALF_PI;
-			} else {
-				fAngle = -atan((fRoverRadius + fXPos)/fYPos) - HALF_PI;
-			}
-		}
-
-		return fAngle;
-	}
-
-	// Calculates the wheel radius using an arbitrary/hypothetical input value.
-	float radius(float fRadiusIn) {
-		return sqrt(sq(fRadiusIn + fXPos) + sq(fYPos));
-	}
-
-	// Calculates the wheel radius using the global variables.
-	float radius() {
-		fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos)) * fXPos / abs(fXPos);
-
-		return fRadius;
-	}
-
-	// Calculates the wheel velocity using the global variables.
-	float velocity() {
-		radius();  // Make sure the radius calculation is up-to-date
-
-		if (bDriveMode) {
-			fVelocity = nMaxSpeed * fRoverRotation * fRadius / maxRadius(fRoverRadius);
-		} else {
-			fVelocity = abs(fRadius) * fRoverVelocity / abs(fRoverRadius);
-
-			// Check for situations where the wheel should turn in the opposite
-			// direction than expected. This occurs when the wheel is
-			// non-steerable and its wheel radius is greater than the global
-			// rover radius.
-			//
-			// TODO: make this work with all wheels, not just the non-steerable
-			// ones.
-			if ((!bSteerable || (fYPos == 0)) && (((fRoverRadius < 0) && (fRoverRadius + fXPos) > 0) || ((fRoverRadius > 0) && (fRoverRadius + fXPos) < 0))) {
-				fVelocity *= -1;
-			}
-		}
-
-		return fVelocity;
-	}
-
-	// Draws a circle representing the actual path this wheel will take.
-	void drawRadius() {
-		noFill();
-		stroke(127, 127, 127, 127);
-		ellipseMode(RADIUS);
-
-		if (!bDriveMode && X1Stick == 0) {
-			// If we're going straight, just draw a line
-			line(fXPos, -height / 2, fXPos, height / 2);
-		} else {
-			// If not, draw a circle, and a point at the center of that circle
-			point(-fRoverRadius, 0);
-			ellipse(-fRoverRadius, 0, fRadius, fRadius);
-		}
-	}
-
-	// Draws a vector that represents the velocity of the wheel.
-	void drawVelocity() {
-		// Don't draw anything if the wheel isn't turning
-		if (bDrawVelocity && (fVelocity != 0)) {
-			stroke(255, 255, 255);
-			line(0, 0, 0, -fVelocity / 8);
-			line(-2, -fVelocity / 8, 2, -fVelocity / 8);
-		}
-	}
-
-	// Draws the actual wheel itself.
-	void drawWheel() {
-		fill(48, 48, 48);
-		if (over()) {
-			stroke(0, 0, 0);
-		} else {
-			noStroke();
-		}
-		rectMode(RADIUS);
-		rect(0, 0, fWheelWidth, fWheelHeight, fWheelWidth / 2);
-
-		// Uncomment to show an indicator on the front of the wheel
-		/*stroke(0, 0, 0);
-		line(-15, -45, 15, -45);*/
-	}
-
-	// Updates all the wheel variables.
-	void update() {
-		angle();
-		velocity();
-	}
-
-	// Calls all the required draw functions.
-	void draw() {
-		pushMatrix();
-		translate(fXPos, -fYPos);
-		rotate(-fAngle);
-
-		drawWheel();
-		stroke(0, 0, 0);
-		if (bDrawRadius) {
-			point(0, 0);
-		}
-		drawVelocity();
-
-		popMatrix();
-	}
-
-	// Returns a boolean telling whether or not the mouse is over the wheel.
-	boolean over() {
-		radius();  // Make sure the angle calculation is up-to-date
-
-		// Do some fancy-ass math
-		float fXDistance = float(mouseX) - (width / 2) - fXPos;
-		float fYDistance = float(mouseY) - (height / 2) + fYPos;
-		float fHypotenuse = sqrt(sq(fXDistance) + sq(fYDistance));
-		float fTheta = fAngle + atan(fYDistance / fXDistance);
-
-		if ((abs(fHypotenuse * cos(fTheta)) < fWheelWidth) && (abs(fHypotenuse * sin(fTheta)) < fWheelHeight)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 }
