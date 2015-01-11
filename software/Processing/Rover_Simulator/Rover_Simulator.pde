@@ -338,6 +338,7 @@ void drawMast() {
 // Returns the value of the maximum distance of any wheel from its center to the
 // center of rotation of the rover.
 float maxRadius(float fRadius) {
+	// TODO: change to for-each form
 	float[] fRadii = new float[wheels.length];
 	for (int i = 0; i < wheels.length; i++) {
 		fRadii[i] = wheels[i].radius(fRadius);
@@ -372,7 +373,7 @@ class Wheel {
 	float angle() {
 		if (bDriveMode) {
 			// Angle is always the same when in mode 1
-			if (!bSteerable) {
+			if (!bSteerable || (fYPos == 0)) {
 				fAngle = 0;  // Non-steerable wheels always face forward
 			} else if (fXPos * fYPos > 0) {
 				fAngle = -atan(fXPos/fYPos) + HALF_PI;
@@ -381,7 +382,7 @@ class Wheel {
 			}
 		} else {
 			// In mode 0, angle depends on the global rover radius
-			if (!bSteerable) {
+			if (!bSteerable || (fYPos == 0)) {
 				fAngle = 0;  // Non-steerable wheels always face forward
 			} else if (fRoverRadius * fYPos > 0) {
 				fAngle = -atan((fRoverRadius + fXPos)/fYPos) + HALF_PI;
@@ -421,7 +422,7 @@ class Wheel {
 			//
 			// TODO: make this work with all wheels, not just the non-steerable
 			// ones.
-			if (!bSteerable && (((fRoverRadius < 0) && (fRoverRadius + fXPos) > 0) || ((fRoverRadius > 0) && (fRoverRadius + fXPos) < 0))) {
+			if ((!bSteerable || (fYPos == 0)) && (((fRoverRadius < 0) && (fRoverRadius + fXPos) > 0) || ((fRoverRadius > 0) && (fRoverRadius + fXPos) < 0))) {
 				fVelocity *= -1;
 			}
 		}
