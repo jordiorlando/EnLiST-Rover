@@ -1,0 +1,7 @@
+Rover controller
+X1	 Turn Radius	3	SLIDER	x	0	1.0	0.01
+Y1	 Velocity	3	SLIDER	y	0	-1.0	0.01
+X2	 Mast Pan	3	SLIDER	z	0	1.0	0.01
+Y2	 Mast Tilt	3	SLIDER	rz	0	-1.0	0.01
+B1	 Drive Mode	1	BUTTON	10	0	0.0	0.0
+B2	 Mast Mode	1	BUTTON	11	0	0.0	0.0
