@@ -1,11 +1,12 @@
 // Radio Button class. Creates a nice round radio button as well as an optional
 // text label. Also customizable.
+// TODO: finish comments
 public class RadioButton {
-	float fXPos, fYPos, fRadius;
-	color cStrokeColor = color(48, 48, 48);
-	color cFillColor = color(64, 64, 64);
-	color cHoverColor = color(128, 128, 128);
-	boolean bPressed;
+	private boolean bPressed;
+	private float fXPos, fYPos, fRadius;
+	private color cStrokeColor = color(48, 48, 48);
+	private color cFillColor = color(64, 64, 64);
+	private color cHoverColor = color(128, 128, 128);
 
 	RadioButton(float fXTemp, float fYTemp, float fRadiusTemp) {
 		fXPos = fXTemp;
@@ -72,6 +73,10 @@ public class RadioButton {
 
 		fill(cFillColor);
 		text(sText, fXPos + fRadius + 10, fYPos - 2);
+	}
+
+	void set(boolean bState) {
+		bPressed = bState;
 	}
 
 	void toggle() {

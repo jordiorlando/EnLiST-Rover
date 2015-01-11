@@ -3,13 +3,13 @@
 // itself.
 public class Wheel {
 	// Determines whether this wheel is capable of rotating or not
-	boolean bSteerable;
+	private boolean bSteerable;
 	// The horizontal and vertical offsets from the center of the wheel
-	float fXPos, fYPos;
+	private float fXPos, fYPos;
 	// The three variables that define the motion of the wheel
-	float fAngle, fRadius, fVelocity;
-
-	boolean bDrawRadius = false;
+	private float fAngle, fRadius, fVelocity;
+	// Flag to set whether or not a wheel radius should be drawn
+	private boolean bDrawRadius = false;
 
 	// Constructor. Takes an input to determine whether or not it is steerable
 	// as well as its horizontal and vertical offsets from the center of the
@@ -52,7 +52,7 @@ public class Wheel {
 
 	// Calculates the wheel radius using the global variables.
 	float radius() {
-		fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos)) * fXPos / abs(fXPos);
+		fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos)) * Math.signum(fXPos);
 
 		return fRadius;
 	}
@@ -68,12 +68,12 @@ public class Wheel {
 
 			// Check for situations where the wheel should turn in the opposite
 			// direction than expected. This occurs when the wheel is
-			// non-steerable and its wheel radius is greater than the global
-			// rover radius.
+			// non-steerable or has a y-position of 0 and its wheel radius is
+			// greater than the global rover radius.
 			//
 			// TODO: make this work with all wheels, not just the non-steerable
 			// ones.
-			if ((!bSteerable || (fYPos == 0)) && (((fRoverRadius < 0) && (fRoverRadius + fXPos) > 0) || ((fRoverRadius > 0) && (fRoverRadius + fXPos) < 0))) {
+			if ((!bSteerable || (fYPos == 0)) && (Math.signum(fRoverRadius) * (fRoverRadius + fXPos) < 0)) {
 				fVelocity *= -1;
 			}
 		}

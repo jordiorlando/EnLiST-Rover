@@ -63,9 +63,9 @@ public void setup() {
 	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
 
 	// Initialize radio buttons
-	drawRoverRadius.bPressed = true;
-	drawRoverVelocity.bPressed = true;
-	drawRoverRotation.bPressed = true;
+	drawRoverRadius.set(true);
+	drawRoverVelocity.set(true);
+	drawRoverRotation.set(true);
 
 	// Wheel declarations
 	wheels[0] = new Wheel(true, -150, 200);
@@ -176,29 +176,31 @@ public void draw() {
 
 // Automatically called whenever a mouse button is pressed.
 void mousePressed() {
-	// Check if the mouse is inside the console and set the appropriate flag
-	if (mouseY > height - 20) {
-		bConsoleFocus = true;
-	} else {
-		bConsoleFocus = false;
-	}
-
-	if (bDriveMode) {
-		if (drawRoverRotation.over()) {
-			drawRoverRotation.toggle();
+	if (mouseButton == LEFT) {
+		// Check if the mouse is inside the console and set the appropriate flag
+		if (mouseY > height - 20) {
+			bConsoleFocus = true;
+		} else {
+			bConsoleFocus = false;
 		}
-	} else {
-		if (drawRoverRadius.over()) {
-			drawRoverRadius.toggle();
-		} else if (drawRoverVelocity.over()) {
-			drawRoverVelocity.toggle();
-		}
-	}
 
-	// Check if the mouse is over any of the wheels
-	for (Wheel wheel : wheels) {
-		if (wheel.over()) {
-			wheel.bDrawRadius = !wheel.bDrawRadius;
+		if (bDriveMode) {
+			if (drawRoverRotation.over()) {
+				drawRoverRotation.toggle();
+			}
+		} else {
+			if (drawRoverRadius.over()) {
+				drawRoverRadius.toggle();
+			} else if (drawRoverVelocity.over()) {
+				drawRoverVelocity.toggle();
+			}
+		}
+
+		// Check if the mouse is over any of the wheels
+		for (Wheel wheel : wheels) {
+			if (wheel.over()) {
+				wheel.bDrawRadius = !wheel.bDrawRadius;
+			}
 		}
 	}
 }
@@ -348,11 +350,12 @@ void drawMast() {
 // Returns the value of the maximum distance of any wheel from its center to the
 // center of rotation of the rover.
 float maxRadius(float fRadius) {
-	// TODO: change to for-each form
-	float[] fRadii = new float[wheels.length];
-	for (int i = 0; i < wheels.length; i++) {
-		fRadii[i] = wheels[i].radius(fRadius);
+	float fMaxRadius = 0;
+	for (Wheel wheel : wheels) {
+		if (wheel.radius(fRadius) > fMaxRadius) {
+			fMaxRadius = wheel.radius(fRadius);
+		}
 	}
 
-	return max(fRadii);
+	return fMaxRadius;
 }
