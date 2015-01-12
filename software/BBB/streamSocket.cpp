@@ -186,7 +186,7 @@ void streamSocket::sendToAll(unsigned char * data, size_t length)
     for (int i=0; i<fdlist.size(); i++)
     {
         //sendData(fdlist[i].fd, data, length);
-        send(fdlist[i].fd, buf, length + len, 0);
+        send(fdlist[i].fd, buf, length + len, MSG_DONTWAIT);
     }
 }
 
@@ -194,7 +194,7 @@ void streamSocket::sendToAll(unsigned char * data, size_t length)
 /*
  * Send data to specified fd.
  */
-void streamSocket::sendData(int socketfd, unsigned char * data, size_t length)
+void streamSocket::sendData(int socketfd, unsigned char * data, size_t length, uint8_t opcode)
 {
 
     unsigned char framedata = 0x00;
@@ -205,7 +205,6 @@ void streamSocket::sendData(int socketfd, unsigned char * data, size_t length)
     //0x2: binary
     //0x9: ping (recv only)
     //0xA: pong (send only)
-    unsigned char opcode = 0x2;
 
     framedata |= 0x80;      //for FIN = true (multiple frame continuation not implemented)
     framedata |= opcode;
@@ -256,7 +255,7 @@ void streamSocket::sendData(int socketfd, unsigned char * data, size_t length)
 
 
     //send the actual data
-    send(socketfd, data, length, 0);
+    send(socketfd, data, length, MSG_DONTWAIT);
 }
 
 /*
@@ -268,7 +267,7 @@ std::vector<unsigned char> streamSocket::recvData(int socketfd, unsigned char & 
 
     std::vector<unsigned char> data(8);
 
-    size_t bytes_received = recv(socketfd, data.data(), 2, 0);
+    ssize_t bytes_received = recv(socketfd, data.data(), 2, MSG_DONTWAIT);
 
     if (bytes_received < 2)
     {
@@ -320,7 +319,7 @@ std::vector<unsigned char> streamSocket::recvData(int socketfd, unsigned char & 
                  ((uint64_t)data[3] << 32) |
                  ((uint64_t)data[4] << 24) |
                  ((uint64_t)data[5] << 16) |
-                 ((uint64_t)data[6] << 8) |
+                 ((uint64_t)data[6] << 8)  |
                  ((uint64_t)data[7]);
     }
     else //8 bit length
@@ -382,7 +381,7 @@ void streamSocket::handleConnection(int socketfd)
 {
 
     //recieve data
-    ssize_t bytes_received, total_bytes;
+    ssize_t bytes_received;
     char * incoming_data_buffer = (char *)malloc(1000 * sizeof(char));
     //char incoming_data_buffer[1000];
     //std::vector<char> incoming_data_buffer(500);
@@ -428,7 +427,10 @@ void streamSocket::handleConnection(int socketfd)
     //a good idea to change the way this works (here as well as on the client)
     //int16_t width = 1280, height = 720;
 
+    //NOTE: this is temporarily disabled for testing other
+    //video streaming methods.
 
+    /*
     int16_t width = 960, height = 540;
     unsigned char header[9];
     header[0] = 0x1; //datatype (video)
@@ -441,8 +443,8 @@ void streamSocket::handleConnection(int socketfd)
     header[7] = (height >> 8) & 0xFF;
     header[8] = height & 0xFF;
 
-
     sendData(socketfd, header, 9);
+    */
 
     //socket is now connected, save fd to list
     struct pollfd pfd;
