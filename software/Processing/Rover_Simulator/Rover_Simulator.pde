@@ -11,8 +11,8 @@ PFont f;  // Declare a font variable for on-screen text
 // Constant declarations
 int nMaxSpeed = 255;
 float fRadiusFactor = 500;
-float fWheelWidth = 20;
 float fWheelHeight = 40;
+float fWheelWidth = 20;
 
 // Whether or not the console is in focus
 boolean bConsoleFocus = false;
@@ -68,12 +68,12 @@ public void setup() {
 	drawRoverRotation.set(true);
 
 	// Wheel declarations
-	wheels[0] = new Wheel(true, -150, 200);
-	wheels[1] = new Wheel(true, 150, 200);
-	wheels[2] = new Wheel(false, -150, 0);
-	wheels[3] = new Wheel(false, 150, 0);
-	wheels[4] = new Wheel(true, -150, -200);
-	wheels[5] = new Wheel(true, 150, -200);
+	wheels[0] = new Wheel(STEERABLE, REVERSE, -150, 200);
+	wheels[1] = new Wheel(STEERABLE, NORMAL, 150, 200);
+	wheels[2] = new Wheel(STATIONARY, REVERSE, -150, 0);
+	wheels[3] = new Wheel(STATIONARY, NORMAL, 150, 0);
+	wheels[4] = new Wheel(STEERABLE, REVERSE, -150, -200);
+	wheels[5] = new Wheel(STEERABLE, NORMAL, 150, -200);
 }
 
 public void draw() {
