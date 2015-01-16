@@ -84,7 +84,7 @@ public class RadioButton {
 	}
 
 	boolean over() {
-		if (sqrt(sq(mouseX - fXPos) + sq(mouseY - fYPos)) > fRadius) {
+		if (sqrt(sq(mouseX - fXPos) + sq(mouseY - fYPos)) > fRadius + 2) {
 			return false;
 		} else {
 			return true;
