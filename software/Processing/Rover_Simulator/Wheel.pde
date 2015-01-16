@@ -1,11 +1,22 @@
+// Defines
+public static final boolean STATIONARY = false;
+public static final boolean STEERABLE = true;
+public static final boolean NORMAL = false;
+public static final boolean REVERSE = true;
+
 // Wheel class. Stores permanent data about each wheel, and is also responsible
 // for calculating all the required numbers. It also takes care of drawing
 // itself.
 public class Wheel {
-	// Determines whether this wheel is capable of rotating or not
-	private boolean bSteerable;
-	// The horizontal and vertical offsets from the center of the wheel
-	private float fXPos, fYPos;
+	// Determines whether this wheel is capable of rotating or not and whether
+	// or not it is mounted backwards.
+	private boolean bSteerable, bReverse;
+	// The horizontal and vertical offsets from the center of the rover and the
+	// angle the wheel is mounted at.
+	private float fXPos, fYPos, fCenterAngle;
+	// The center of the circle around which the wheel will travel, relative to
+	// the wheel.
+	private float fCenterX, fCenterY;
 	// The three variables that define the motion of the wheel
 	private float fAngle, fRadius, fVelocity;
 	// Flag to set whether or not a wheel radius should be drawn
@@ -14,31 +25,54 @@ public class Wheel {
 	// Constructor. Takes an input to determine whether or not it is steerable
 	// as well as its horizontal and vertical offsets from the center of the
 	// rover.
-	Wheel(boolean bSteerableTemp, float fXTemp, float fYTemp) {
+	Wheel(boolean bSteerableTemp, boolean bReverseTemp, float fXTemp, float fYTemp) {
 		bSteerable = bSteerableTemp;
+		bReverse = bReverseTemp;
 		fXPos = fXTemp;
 		fYPos = fYTemp;
+
+		fCenterAngle = atan2(fYPos, fXPos);
+		if (bReverse && (fCenterAngle < PI)) {
+			fCenterAngle += PI;
+		} else if (bReverse) {
+			fCenterAngle -= PI;
+		}
+	}
+
+	// Calculates the horizontal and vertical distances from the center of
+	// rotation of the wheel to the center of the wheel.
+	private void center() {
+		fCenterX = fRoverRadius + fXPos;
+		fCenterY = fYPos;
 	}
 
 	// Calculates the angle for the wheel in radians using the global variables.
 	float angle() {
 		if (bDriveMode) {
-			// Angle is always the same when in mode 1
-			if (!bSteerable || (fYPos == 0)) {
-				fAngle = 0;  // Non-steerable wheels always face forward
-			} else if (fXPos * fYPos > 0) {
-				fAngle = -atan(fXPos/fYPos) + HALF_PI;
+			if (!bSteerable) {
+				fAngle = HALF_PI;
+			} else if (fXPos > 0) {
+				fAngle = atan2(fYPos, fXPos) + HALF_PI;
 			} else {
-				fAngle = -atan(fXPos/fYPos) - HALF_PI;
+				fAngle = atan2(fYPos, fXPos) + PI + HALF_PI;
+			}
+
+			if (bReverse) {
+				fAngle -= PI;
 			}
 		} else {
-			// In mode 0, angle depends on the global rover radius
-			if (!bSteerable || (fYPos == 0)) {
-				fAngle = 0;  // Non-steerable wheels always face forward
-			} else if (fRoverRadius * fYPos > 0) {
-				fAngle = -atan((fRoverRadius + fXPos)/fYPos) + HALF_PI;
+			center();
+
+			if (!bSteerable) {
+				fAngle = HALF_PI;
+			} else if (fRoverRadius > 0) {
+				fAngle = atan2(fCenterY, fCenterX) + HALF_PI;
 			} else {
-				fAngle = -atan((fRoverRadius + fXPos)/fYPos) - HALF_PI;
+				fAngle = atan2(fCenterY, fCenterX) + PI + HALF_PI;
+			}
+
+			if (bReverse) {
+				fAngle -= PI;
 			}
 		}
 
@@ -52,19 +86,24 @@ public class Wheel {
 
 	// Calculates the wheel radius using the global variables.
 	float radius() {
-		fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos)) * Math.signum(fXPos);
+		fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos));
 
 		return fRadius;
 	}
 
 	// Calculates the wheel velocity using the global variables.
 	float velocity() {
+		center();
 		radius();  // Make sure the radius calculation is up-to-date
 
 		if (bDriveMode) {
 			fVelocity = nMaxSpeed * fRoverRotation * fRadius / maxRadius(fRoverRadius);
 		} else {
-			fVelocity = abs(fRadius) * fRoverVelocity / abs(fRoverRadius);
+			if (bReverse) {
+				fVelocity = -fRadius * fRoverVelocity / abs(fRoverRadius);
+			} else {
+				fVelocity = fRadius * fRoverVelocity / abs(fRoverRadius);
+			}
 
 			// Check for situations where the wheel should turn in the opposite
 			// direction than expected. This occurs when the wheel is
@@ -102,8 +141,8 @@ public class Wheel {
 		// Don't draw anything if the wheel isn't turning
 		if (drawRoverVelocity.pressed() && (fVelocity != 0)) {
 			stroke(255, 255, 255);
-			line(0, 0, 0, -fVelocity / 8);
-			line(-2, -fVelocity / 8, 2, -fVelocity / 8);
+			line(0, 0, fVelocity / 8, 0);
+			line(fVelocity / 8, -2, fVelocity / 8, 2);
 		}
 	}
 
@@ -116,11 +155,11 @@ public class Wheel {
 			noStroke();
 		}
 		rectMode(RADIUS);
-		rect(0, 0, fWheelWidth, fWheelHeight, fWheelWidth / 2);
+		rect(0, 0, fWheelHeight, fWheelWidth, fWheelWidth / 2);
 
 		// Uncomment to show an indicator on the front of the wheel
 		/*stroke(0, 0, 0);
-		line(-15, -45, 15, -45);*/
+		line(fWheelHeight + 5, -fWheelWidth + 5, fWheelHeight + 5, fWheelWidth - 5);*/
 	}
 
 	// Updates all the wheel variables.
@@ -153,9 +192,9 @@ public class Wheel {
 		float fXDistance = float(mouseX) - (width / 2) - fXPos;
 		float fYDistance = float(mouseY) - (height / 2) + fYPos;
 		float fHypotenuse = sqrt(sq(fXDistance) + sq(fYDistance));
-		float fTheta = fAngle + atan(fYDistance / fXDistance);
+		float fTheta = fAngle + atan2(fYDistance, fXDistance);
 
-		if ((abs(fHypotenuse * cos(fTheta)) < fWheelWidth) && (abs(fHypotenuse * sin(fTheta)) < fWheelHeight)) {
+		if ((abs(fHypotenuse * cos(fTheta)) < fWheelHeight) && (abs(fHypotenuse * sin(fTheta)) < fWheelWidth)) {
 			return true;
 		} else {
 			return false;
