@@ -31,11 +31,11 @@ public class Wheel {
 		fXPos = fXTemp;
 		fYPos = fYTemp;
 
+		// Calculate the angle of the wheel's home position. This corresponds to
+		// 0 degrees on the servo.
 		fCenterAngle = atan2(fYPos, fXPos);
-		if (bReverse && (fCenterAngle < PI)) {
-			fCenterAngle += PI;
-		} else if (bReverse) {
-			fCenterAngle -= PI;
+		if (bReverse) {
+			fCenterAngle += PI;  // If the wheel is reversed, reverse the angle
 		}
 	}
 
@@ -49,34 +49,47 @@ public class Wheel {
 	// Calculates the angle for the wheel in radians using the global variables.
 	float angle() {
 		if (bDriveMode) {
-			if (!bSteerable) {
+			if (!bSteerable && bReverse) {
+				fAngle = -HALF_PI;
+			} else if (!bSteerable && !bReverse) {
 				fAngle = HALF_PI;
 			} else if (fXPos > 0) {
-				fAngle = atan2(fYPos, fXPos) + HALF_PI;
+				fAngle = fCenterAngle + HALF_PI;
 			} else {
-				fAngle = atan2(fYPos, fXPos) + PI + HALF_PI;
-			}
-
-			if (bReverse) {
-				fAngle -= PI;
+				fAngle = fCenterAngle - HALF_PI;
 			}
 		} else {
-			center();
-
 			if (!bSteerable) {
 				fAngle = HALF_PI;
 			} else if (fRoverRadius > 0) {
 				fAngle = atan2(fCenterY, fCenterX) + HALF_PI;
 			} else {
-				fAngle = atan2(fCenterY, fCenterX) + PI + HALF_PI;
+				fAngle = atan2(fCenterY, fCenterX) - HALF_PI;
 			}
 
+			// If the wheel is reversed, reverse the angle
 			if (bReverse) {
-				fAngle -= PI;
+				fAngle += PI;
 			}
 		}
 
+		// Bound the angle to +/- 2PI
+		fAngle %= TWO_PI;
+
 		return fAngle;
+	}
+
+	// Converts the wheel angle to a servo position between -90 and 90 degrees.
+	private float servoPos() {
+		float fServoPos = degrees(fCenterAngle - fAngle);
+		if (fServoPos > 180) {
+			fServoPos -= 360;
+		} else if (fServoPos < -180) {
+			fServoPos += 360;
+		}
+		// Bound anything that is too large or too small
+
+		return fServoPos;
 	}
 
 	// Calculates the wheel radius using an arbitrary/hypothetical input value.
@@ -93,9 +106,6 @@ public class Wheel {
 
 	// Calculates the wheel velocity using the global variables.
 	float velocity() {
-		center();
-		radius();  // Make sure the radius calculation is up-to-date
-
 		if (bDriveMode) {
 			fVelocity = nMaxSpeed * fRoverRotation * fRadius / maxRadius(fRoverRadius);
 		} else {
@@ -134,6 +144,8 @@ public class Wheel {
 			point(-fRoverRadius, 0);
 			ellipse(-fRoverRadius, 0, fRadius, fRadius);
 		}
+
+		println(servoPos());
 	}
 
 	// Draws a vector that represents the velocity of the wheel.
@@ -164,7 +176,9 @@ public class Wheel {
 
 	// Updates all the wheel variables.
 	void update() {
+		center();
 		angle();
+		radius();
 		velocity();
 	}
 

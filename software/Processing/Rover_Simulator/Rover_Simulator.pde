@@ -162,13 +162,13 @@ public void draw() {
 	}
 	fill(48, 48, 48);
 	strokeWeight(2);
-	float fRightTextWidth = textWidth("Mast Pan: -360" + (char)0x00B0) + 10;
+	float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
 	if (bMastMode) {
 		text("Mast Mode: 1", width - fRightTextWidth, 10);
 	} else {
 		text("Mast Mode: 0", width - fRightTextWidth, 10);
 	}
-	text("Mast Pan: " + String.format("%.0f", fMastPan * 360) + (char)0x00B0, width - fRightTextWidth, 30);
+	text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
 
 	// Draw console
 	drawConsole();
@@ -329,14 +329,14 @@ void drawMast() {
 	pushMatrix();
 	translate(0, -175);
 	if (bMastMode) {
-		float fNew = X2Stick / 100;
-		if (abs(fMastPan + fNew) <= 1) {
+		float fNew = X2Stick * PI / 100;
+		if (abs(fMastPan + fNew) <= PI) {
 			fMastPan += fNew;
 		}
 	} else {
-		fMastPan = X2Stick;
+		fMastPan = X2Stick * PI;
 	}
-	rotate(PI * fMastPan);
+	rotate(fMastPan);
 
 	fill(48, 48, 48, 255);
 	noStroke();
