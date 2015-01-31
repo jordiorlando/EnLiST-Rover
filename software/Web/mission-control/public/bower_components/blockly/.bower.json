@@ -1,0 +1,13 @@
+{
+  "name": "blockly",
+  "homepage": "https://github.com/google/blockly",
+  "_release": "69294d8344",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "69294d83445a5d4e428bbc6ac257011179c31e1e"
+  },
+  "_source": "git://github.com/google/blockly.git",
+  "_target": "*",
+  "_originalSource": "google/blockly"
+}
