@@ -19,8 +19,8 @@ public class Wheel {
 	private float fCenterX, fCenterY;
 	// The three variables that define the motion of the wheel
 	private float fAngle, fRadius, fVelocity;
-	// Flag to set whether or not a wheel radius should be drawn
-	private boolean bDrawRadius = false;
+	// Flag to set whether or not the wheel has been pressed
+	private boolean bPressed = false;
 
 	// Constructor. Takes an input to determine whether or not it is steerable
 	// as well as its horizontal and vertical offsets from the center of the
@@ -34,9 +34,6 @@ public class Wheel {
 		// Calculate the angle of the wheel's home position. This corresponds to
 		// 0 degrees on the servo.
 		fCenterAngle = atan2(fYPos, fXPos);
-		if (bReverse) {
-			fCenterAngle += PI;  // If the wheel is reversed, reverse the angle
-		}
 	}
 
 	// Calculates the horizontal and vertical distances from the center of
@@ -49,14 +46,16 @@ public class Wheel {
 	// Calculates the angle for the wheel in radians using the global variables.
 	float angle() {
 		if (bDriveMode) {
-			if (!bSteerable && bReverse) {
-				fAngle = -HALF_PI;
-			} else if (!bSteerable && !bReverse) {
+			if (!bSteerable) {
 				fAngle = HALF_PI;
 			} else if (fXPos > 0) {
 				fAngle = fCenterAngle + HALF_PI;
 			} else {
 				fAngle = fCenterAngle - HALF_PI;
+			}
+
+			if (bReverse) {
+				fAngle += PI;
 			}
 		} else {
 			if (!bSteerable) {
@@ -81,13 +80,20 @@ public class Wheel {
 
 	// Converts the wheel angle to a servo position between -90 and 90 degrees.
 	private float servoPos() {
-		float fServoPos = degrees(fCenterAngle - fAngle);
-		if (fServoPos > 180) {
-			fServoPos -= 360;
-		} else if (fServoPos < -180) {
-			fServoPos += 360;
+		float fServoPos = 0;
+		if (bSteerable) {
+			fServoPos = fCenterAngle - fAngle;
+
+			// Bound anything that is too large or too small
+			if ((fXPos * fYPos) < 0) {
+				fServoPos += PI;
+				if (fServoPos > PI) {
+					fServoPos -= TWO_PI;
+				}
+			} else if (fServoPos < -PI){
+				fServoPos += TWO_PI;
+			}
 		}
-		// Bound anything that is too large or too small
 
 		return fServoPos;
 	}
@@ -144,8 +150,6 @@ public class Wheel {
 			point(-fRoverRadius, 0);
 			ellipse(-fRoverRadius, 0, fRadius, fRadius);
 		}
-
-		println(servoPos());
 	}
 
 	// Draws a vector that represents the velocity of the wheel.
@@ -169,9 +173,11 @@ public class Wheel {
 		rectMode(RADIUS);
 		rect(0, 0, fWheelHeight, fWheelWidth, fWheelWidth / 2);
 
-		// Uncomment to show an indicator on the front of the wheel
-		/*stroke(0, 0, 0);
-		line(fWheelHeight + 5, -fWheelWidth + 5, fWheelHeight + 5, fWheelWidth - 5);*/
+		// Show an indicator on the front of the wheel
+		if (drawWheelIndicators.pressed()) {
+			stroke(0, 0, 0);
+			line(fWheelHeight - 10, fWheelWidth + 5, -fWheelHeight + 10, fWheelWidth + 5);
+		}
 	}
 
 	// Updates all the wheel variables.
@@ -190,12 +196,17 @@ public class Wheel {
 
 		drawWheel();
 		stroke(0, 0, 0);
-		if (bDrawRadius) {
+		if (bPressed) {
 			point(0, 0);
 		}
 		drawVelocity();
 
 		popMatrix();
+
+		if (bPressed) {
+			fill(48, 48, 48);
+			text(String.format("%.0f", degrees(servoPos())) + (char)0x00B0, fXPos - 10, -(fYPos + fWheelHeight + 20));
+		}
 	}
 
 	// Returns a boolean telling whether or not the mouse is over the wheel.

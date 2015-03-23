@@ -1,10 +1,10 @@
-import org.gamecontrolplus.gui.*;
+/*import org.gamecontrolplus.gui.*;
 import org.gamecontrolplus.*;
 import net.java.games.input.*;
 
 ControlIO control;
 Configuration config;
-ControlDevice gpad;
+ControlDevice gpad;*/
 
 PFont f;  // Declare a font variable for on-screen text
 
@@ -30,22 +30,24 @@ boolean bMastMode = false;
 // Angle of the mast
 float fMastPan = 0;
 // Toggles for drawing the rover's turn radius and velocity
-RadioButton drawRoverRadius = new RadioButton(15, 30, 5);
-RadioButton drawRoverVelocity = new RadioButton(15, 50, 5);
-RadioButton drawRoverRotation = new RadioButton(15, 30, 5);
+RadioButton drawRoverRadius = new RadioButton(15, 50, 5);
+RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
+RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
+// Toggle for drawing the wheel indicators
+RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
 
 // Wheel array
 Wheel[] wheels = new Wheel[6];
 
 public void setup() {
-	size(1280, 720);
+	size(1680, 1050);
 
 	// Define the font and use it
 	f = createFont("Source Code Pro", 16, true);
 	textFont(f, 16);
 	textAlign(LEFT, CENTER);
 
-	// Initialise the ControlIO
+	/*// Initialise the ControlIO
 	control = ControlIO.getInstance(this);
 	// Find a device that matches the configuration file
 	gpad = control.getMatchedDevice("ChillStream");
@@ -60,9 +62,10 @@ public void setup() {
 
 	// Register a listener so that changeMastMode() is called every time the
 	// right stick is pressed.
-	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
+	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);*/
 
 	// Initialize radio buttons
+	drawWheelIndicators.set(true);
 	drawRoverRadius.set(true);
 	drawRoverVelocity.set(true);
 	drawRoverRotation.set(true);
@@ -82,14 +85,14 @@ public void draw() {
 	strokeWeight(2);
 
 	// Get gamepad values for the requisite sliders
-	X1Stick = gpad.getSlider("X1").getValue();
+	/*X1Stick = gpad.getSlider("X1").getValue();
 	Y1Stick = gpad.getSlider("Y1").getValue();
 	X2Stick = gpad.getSlider("X2").getValue();
-	Y2Stick = gpad.getSlider("Y2").getValue();
+	Y2Stick = gpad.getSlider("Y2").getValue();*/
 
 	// Use mouse position instead of a gamepad
-	/*X1Stick = (float(mouseX) - 640) / 640;
-	Y1Stick = (360 - float(mouseY)) / 360;*/
+	X1Stick = (float(mouseX) * 2 / width) - 1;
+	Y1Stick = 1 - (float(mouseY) * 2 / height);
 
 	// Different rules for each mode
 	if (bDriveMode) {
@@ -120,7 +123,7 @@ public void draw() {
 	translate(width / 2, height / 2);
 
 	for (Wheel wheel : wheels) {
-		if (wheel.bDrawRadius) {
+		if (wheel.bPressed) {
 			wheel.drawRadius();
 		}
 	}
@@ -151,6 +154,7 @@ public void draw() {
 
 	// Display important information
 	fill(48, 48, 48);
+	drawWheelIndicators.draw("Wheel Indicators");
 	if (bDriveMode) {
 		text("Drive Mode: 1", 10, 10);
 		drawRoverRotation.draw("Rotation: " + fRoverRotation);
@@ -184,6 +188,10 @@ void mousePressed() {
 			bConsoleFocus = false;
 		}
 
+		if (drawWheelIndicators.over()) {
+			drawWheelIndicators.toggle();
+		}
+
 		if (bDriveMode) {
 			if (drawRoverRotation.over()) {
 				drawRoverRotation.toggle();
@@ -199,7 +207,7 @@ void mousePressed() {
 		// Check if the mouse is over any of the wheels
 		for (Wheel wheel : wheels) {
 			if (wheel.over()) {
-				wheel.bDrawRadius = !wheel.bDrawRadius;
+				wheel.bPressed = !wheel.bPressed;
 			}
 		}
 	}
@@ -211,7 +219,11 @@ void keyPressed() {
 	if (bConsoleFocus) {
 		if (key == '\n' ) {
 			// TODO: add cases for other operations/commands
-			fRadiusFactor = Float.parseFloat(sInputString);
+			if (sInputString.equals("mode")) {
+				changeDriveMode();
+			} else if (sInputString.charAt(0) == 'r'){
+				fRadiusFactor = Float.parseFloat(sInputString.substring(1));
+			}
 
 			sInputString = "";
 		} else if (key == 8) {
