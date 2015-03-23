@@ -29,12 +29,12 @@ boolean bDriveMode = false;
 boolean bMastMode = false;
 // Angle of the mast
 float fMastPan = 0;
+// Toggle for drawing the wheel indicators
+RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
 // Toggles for drawing the rover's turn radius and velocity
 RadioButton drawRoverRadius = new RadioButton(15, 50, 5);
 RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
 RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
-// Toggle for drawing the wheel indicators
-RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
 
 // Wheel array
 Wheel[] wheels = new Wheel[6];
@@ -152,7 +152,7 @@ public void draw() {
 
 	popMatrix();
 
-	// Display important information
+	// Display important information (HUD)
 	fill(48, 48, 48);
 	drawWheelIndicators.draw("Wheel Indicators");
 	if (bDriveMode) {
@@ -164,6 +164,7 @@ public void draw() {
 		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
 		text("Radius Factor: " + fRadiusFactor, 10, height - 35);
 	}
+
 	fill(48, 48, 48);
 	strokeWeight(2);
 	float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
@@ -186,28 +187,33 @@ void mousePressed() {
 			bConsoleFocus = true;
 		} else {
 			bConsoleFocus = false;
-		}
 
-		if (drawWheelIndicators.over()) {
-			drawWheelIndicators.toggle();
-		}
-
-		if (bDriveMode) {
-			if (drawRoverRotation.over()) {
-				drawRoverRotation.toggle();
+			if (drawWheelIndicators.over()) {
+				drawWheelIndicators.toggle();
 			}
-		} else {
-			if (drawRoverRadius.over()) {
-				drawRoverRadius.toggle();
-			} else if (drawRoverVelocity.over()) {
-				drawRoverVelocity.toggle();
-			}
-		}
 
-		// Check if the mouse is over any of the wheels
-		for (Wheel wheel : wheels) {
-			if (wheel.over()) {
-				wheel.bPressed = !wheel.bPressed;
+			if (bDriveMode) {
+				if (drawRoverRotation.over()) {
+					drawRoverRotation.toggle();
+				}
+			} else {
+				//float fRadiusWidth = textWidth("Radius Factor: ") + 10;
+
+				if (drawRoverRadius.over()) {
+					drawRoverRadius.toggle();
+				} else if (drawRoverVelocity.over()) {
+					drawRoverVelocity.toggle();
+				} /*else if ((mouseX > fRadiusWidth) && (mouseX < fRadiusWidth + textWidth(Float.toString(fRadiusFactor))) && (mouseY > height - 45)) {
+					fill(255, 0, 0);
+					text("YAY!", 0, height / 2);
+				}*/
+			}
+
+			// Check if the mouse is over any of the wheels
+			for (Wheel wheel : wheels) {
+				if (wheel.over()) {
+					wheel.bPressed = !wheel.bPressed;
+				}
 			}
 		}
 	}
@@ -215,11 +221,16 @@ void mousePressed() {
 
 // Automatically called whenever a key is pressed on the keyboard.
 void keyPressed() {
+	// If there isn't anything in the console yet, bring it into focus
+	if (sInputString.length() == 0) {
+		bConsoleFocus = true;
+	}
+
 	// Only do stuff if the console is in focus
 	if (bConsoleFocus) {
 		if (key == '\n' ) {
 			// TODO: add cases for other operations/commands
-			if (sInputString.equals("mode")) {
+			if (sInputString.charAt(0) == 'm') {
 				changeDriveMode();
 			} else if (sInputString.charAt(0) == 'r'){
 				fRadiusFactor = Float.parseFloat(sInputString.substring(1));
@@ -229,7 +240,9 @@ void keyPressed() {
 		} else if (key == 8) {
 			// If the backspace key is pressed, delete the last character in the
 			// input string.
-			sInputString = sInputString.substring(0, sInputString.length() - 1);
+			if (sInputString.length() > 0) {
+				sInputString = sInputString.substring(0, sInputString.length() - 1);
+			}
 		} else {
 			// Otherwise, concatenate the String. Each character typed by the
 			// user is added to the end of the input String.
@@ -268,6 +281,10 @@ void drawConsole() {
 	// Highlight the console text if it's in focus
 	if (bConsoleFocus) {
 		fill(255, 255, 255);
+
+		if (sInputString.length() == 0) {
+			rect(30, height - 18, 40, height - 2);
+		}
 	} else {
 		fill(255, 255, 255, 64);
 	}
