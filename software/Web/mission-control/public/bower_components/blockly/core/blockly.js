@@ -29,10 +29,12 @@ goog.provide('Blockly');
 
 // Blockly core dependencies.
 goog.require('Blockly.BlockSvg');
-goog.require('Blockly.Connection');
 goog.require('Blockly.FieldAngle');
 goog.require('Blockly.FieldCheckbox');
 goog.require('Blockly.FieldColour');
+// Date picker commented out since it increases footprint by 60%.
+// Add it only if you need it.
+//goog.require('Blockly.FieldDate');
 goog.require('Blockly.FieldDropdown');
 goog.require('Blockly.FieldImage');
 goog.require('Blockly.FieldTextInput');
@@ -49,11 +51,6 @@ goog.require('Blockly.utils');
 
 // Closure dependencies.
 goog.require('goog.color');
-goog.require('goog.dom');
-goog.require('goog.events');
-goog.require('goog.string');
-goog.require('goog.ui.ColorPicker');
-goog.require('goog.ui.tree.TreeControl');
 goog.require('goog.userAgent');
 
 
@@ -556,7 +553,10 @@ Blockly.removeAllRanges = function() {
  * @private
  */
 Blockly.isTargetInput_ = function(e) {
-  return e.target.type == 'textarea' || e.target.type == 'text';
+  return e.target.type == 'textarea' || e.target.type == 'text' ||
+         e.target.type == 'number' || e.target.type == 'email' ||
+         e.target.type == 'password' || e.target.type == 'search' ||
+         e.target.type == 'tel' || e.target.type == 'url';
 };
 
 /**

@@ -84,7 +84,7 @@ function paramifyString(str, params, mod) {
   }
 
   return mod === str
-    ? '([._a-zA-Z0-9-]+)'
+    ? '([._a-zA-Z0-9-%()]+)'
     : mod;
 }
 
@@ -194,7 +194,7 @@ Router.prototype.configure = function (options) {
     this._methods[this.methods[i]] = true;
   }
 
-  this.recurse   = options.recurse   || this.recurse || false;
+  this.recurse   = typeof options.recurse === 'undefined' ? this.recurse || false : options.recurse;
   this.async     = options.async     || false;
   this.delimiter = options.delimiter || '\/';
   this.strict    = typeof options.strict === 'undefined' ? true : options.strict;
@@ -605,7 +605,7 @@ Router.prototype.traverse = function (method, path, routes, regexp, filter) {
         }
 
         if (this.recurse) {
-          fns.push([routes[r].before, routes[r].on].filter(Boolean));
+          fns.push([routes[r].before, routes[r][method]].filter(Boolean));
           next.after = next.after.concat([routes[r].after].filter(Boolean));
 
           if (routes === this.routes) {

@@ -1,4 +1,5 @@
 /**
+ * @license
  * Visual Blocks Editor
  *
  * Copyright 2011 Google Inc.
@@ -122,6 +123,16 @@ function test_removeClass() {
   assertEquals('Removing "one"', '', p.className);
   Blockly.removeClass_(p, 'zero');
   assertEquals('Removing "zero"', '', p.className);
+}
+
+function test_hasClass() {
+  var p = document.createElement('p');
+  p.className = ' one three  two three  ';
+  assertTrue('Has "one"', Blockly.hasClass_(p, 'one'));
+  assertTrue('Has "two"', Blockly.hasClass_(p, 'two'));
+  assertTrue('Has "three"', Blockly.hasClass_(p, 'three'));
+  assertFalse('Has no "four"', Blockly.hasClass_(p, 'four'));
+  assertFalse('Has no "t"', Blockly.hasClass_(p, 't'));
 }
 
 function test_shortestStringLength() {

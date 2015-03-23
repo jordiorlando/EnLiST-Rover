@@ -27,6 +27,8 @@
 goog.provide('Blockly.Connection');
 goog.provide('Blockly.ConnectionDB');
 
+goog.require('goog.dom');
+
 
 /**
  * Class for a connection between blocks.
@@ -40,9 +42,10 @@ Blockly.Connection = function(source, type) {
   this.type = type;
   this.x_ = 0;
   this.y_ = 0;
-  this.inDB_ = false;
   // Shortcut for the databases for this connection's workspace.
-  this.dbList_ = this.sourceBlock_.workspace.connectionDBList;
+  this.dbList_ = source.workspace.connectionDBList;
+  this.hidden_ = !this.dbList_;
+  this.inDB_ = false;
 };
 
 /**
@@ -55,7 +58,6 @@ Blockly.Connection.prototype.dispose = function() {
   if (this.inDB_) {
     this.dbList_[this.type].removeConnection_(this);
   }
-  this.inDB_ = false;
   if (Blockly.highlightedConnection_ == this) {
     Blockly.highlightedConnection_ = null;
   }
@@ -322,7 +324,9 @@ Blockly.Connection.prototype.moveTo = function(x, y) {
   this.x_ = x;
   this.y_ = y;
   // Insert it into its new location in the database.
-  this.dbList_[this.type].addConnection_(this);
+  if (!this.hidden_) {
+    this.dbList_[this.type].addConnection_(this);
+  }
 };
 
 /**
@@ -508,6 +512,17 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
  * @private
  */
 Blockly.Connection.prototype.checkType_ = function(otherConnection) {
+  // Don't split a connection where both sides are immovable.
+  var thisTargetBlock = this.targetBlock();
+  if (thisTargetBlock && !thisTargetBlock.isMovable() &&
+      !this.sourceBlock_.isMovable()) {
+    return false;
+  }
+  var otherTargetBlock = otherConnection.targetBlock();
+  if (otherTargetBlock && !otherTargetBlock.isMovable() &&
+      !otherConnection.sourceBlock_.isMovable()) {
+    return false;
+  }
   if (!this.check_ || !otherConnection.check_) {
     // One or both sides are promiscuous enough that anything will fit.
     return true;
@@ -615,14 +630,25 @@ Blockly.Connection.prototype.neighbours_ = function(maxLimit) {
 };
 
 /**
+ * Set whether this connections is hidden (not tracked in a database) or not.
+ * @param {boolean} hidden True if connection is hidden.
+ */
+Blockly.Connection.prototype.setHidden = function(hidden) {
+  this.hidden_ = hidden;
+  if (hidden && this.inDB_) {
+    this.dbList_[this.type].removeConnection_(this);
+  } else if (!hidden && !this.inDB_) {
+    this.dbList_[this.type].addConnection_(this);
+  }
+};
+
+/**
  * Hide this connection, as well as all down-stream connections on any block
  * attached to this connection.  This happens when a block is collapsed.
  * Also hides down-stream comments.
  */
 Blockly.Connection.prototype.hideAll = function() {
-  if (this.inDB_) {
-    this.dbList_[this.type].removeConnection_(this);
-  }
+  this.setHidden(true);
   if (this.targetConnection) {
     var blocks = this.targetBlock().getDescendants();
     for (var b = 0; b < blocks.length; b++) {
@@ -630,10 +656,7 @@ Blockly.Connection.prototype.hideAll = function() {
       // Hide all connections of all children.
       var connections = block.getConnections_(true);
       for (var c = 0; c < connections.length; c++) {
-        var connection = connections[c];
-        if (connection.inDB_) {
-          this.dbList_[connection.type].removeConnection_(connection);
-        }
+        connections[c].setHidden(true);
       }
       // Close all bubbles of all children.
       var icons = block.getIcons();
@@ -651,9 +674,7 @@ Blockly.Connection.prototype.hideAll = function() {
  * @return {!Array.<!Blockly.Block>} List of blocks to render.
  */
 Blockly.Connection.prototype.unhideAll = function() {
-  if (!this.inDB_) {
-    this.dbList_[this.type].addConnection_(this);
-  }
+  this.setHidden(false);
   // All blocks that need unhiding must be unhidden before any rendering takes
   // place, since rendering requires knowing the dimensions of lower blocks.
   // Also, since rendering a block renders all its parents, we only need to
@@ -712,6 +733,10 @@ Blockly.ConnectionDB.constructor = Blockly.ConnectionDB;
 Blockly.ConnectionDB.prototype.addConnection_ = function(connection) {
   if (connection.inDB_) {
     throw 'Connection already in database.';
+  }
+  if (connection.sourceBlock_.isInFlyout) {
+    // Don't bother maintaining a database of connections in a flyout.
+    return;
   }
   // Insert connection using binary search.
   var pointerMin = 0;

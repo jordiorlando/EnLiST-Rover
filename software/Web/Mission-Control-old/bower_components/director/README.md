@@ -26,6 +26,14 @@ etc).
 * [API Documentation](#api-documentation)
 * [Frequently Asked Questions](#faq)
 
+## Building client-side script
+
+Run the provided CLI script.
+
+```bash
+./bin/build
+```
+
 ## Client-side Routing
 
 It simply watches the hash of the URL to determine what to do, for example:
@@ -266,13 +274,14 @@ destroy something
 * [Configuration](#configuration)
 * [URL Matching](#url-matching)
 * [URL Parameters](#url-parameters)
+* [Wildcard routes](#wildcard-routes)
 * [Route Recursion](#route-recursion)
 * [Async Routing](#async-routing)
 * [Resources](#resources)
 * [History API](#history-api)
 * [Instance Methods](#instance-methods)
-* [Attach Properties to `this`](#attach-to-this)
-* [HTTP Streaming and Body Parsing](#http-streaming-body-parsing)
+* [Attach Properties to `this`](#attach-properties-to-this)
+* [HTTP Streaming and Body Parsing](#http-streaming-and-body-parsing)
 
 ## Constructor
 
@@ -523,6 +532,15 @@ simple example where a `userId` is used repeatedly.
   //
   router.on('/anything/:userId', function (userId) { });
   router.on('/something-else/:userId', function (userId) { });
+```
+
+## Wildcard routes
+
+It is possible to define wildcard routes, so that /foo and /foo/a/b/c routes to
+the same handler, and gets passed `""` and `"a/b/c"` respectively.
+
+``` js
+  router.on("/foo/?((\w|.)*)"), function (path) { });
 ```
 
 ## Route Recursion

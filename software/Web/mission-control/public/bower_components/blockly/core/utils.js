@@ -28,6 +28,9 @@
 
 goog.provide('Blockly.utils');
 
+goog.require('goog.events.BrowserFeature');
+goog.require('goog.userAgent');
+
 
 /**
  * Add a CSS class to a element.
@@ -322,8 +325,12 @@ Blockly.createSvgElement = function(name, attrs, opt_parent) {
  * @return {boolean} True if right-click.
  */
 Blockly.isRightButton = function(e) {
-  // Control-clicking in WebKit on Mac OS X fails to change button to 2.
-  return e.button == 2 || e.ctrlKey;
+  if (e.ctrlKey && goog.userAgent.MAC) {
+    // Control-clicking on Mac OS X is treated as a right-click.
+    // WebKit on Mac OS X fails to change button to 2 (but Gecko does).
+    return true;
+  }
+  return e.button == 2;
 };
 
 /**
