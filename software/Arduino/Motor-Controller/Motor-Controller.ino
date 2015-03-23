@@ -1,5 +1,5 @@
 #include <TinyWireS.h>
-//#include <Servo8Bit.h>
+#include <TinyServo.h>
 #include <PID_v1.h>
 
 // the default buffer size
@@ -41,7 +41,7 @@
 		0: requested direction
 			0: turn forwards
 			1: turn backwards
-	nI2CReg[1]: requested wheel speed (0~255)
+	nI2CReg[1]: requested wheel speed [0, 255]
 	nI2CReg[2]:
 		7:
 		6:
@@ -53,10 +53,10 @@
 			0: no stall
 			1: stall
 		0: current direction
-			0: turn forwards
-			1: turn backwards
-	nI2CReg[3]: current wheel speed (0~255)
-	nI2CReg[4]: requested servo position (0~180)
+			0: forwards
+			1: backwards
+	nI2CReg[3]: current wheel speed [0, 255]
+	nI2CReg[4]: requested servo position [0, 180]
 	nI2CReg[5]: requested LAMP brightness
 	nI2CReg[6]: lamp mode control
 		7:
@@ -66,20 +66,16 @@
 		3:
 		2:
 		1:
-		0:
+		0: solid
 	nI2CReg[7]:
-	nI2CReg[8]: requested P
+	nI2CReg[8]:
 	nI2CReg[9]:
-	nI2CReg[10]:
+	nI2CReg[10]: PID P value
 	nI2CReg[11]:
-	nI2CReg[12]: requested I
+	nI2CReg[12]: PID I value
 	nI2CReg[13]:
-	nI2CReg[14]:
+	nI2CReg[14]: PID D value
 	nI2CReg[15]:
-	nI2CReg[16]: requested D
-	nI2CReg[17]:
-	nI2CReg[18]:
-	nI2CReg[19]:
 
 */
 volatile uint8_t nI2CReg[REGSIZE]; // I2C register
@@ -90,7 +86,9 @@ bool bStandby = true;
 bool bBrakeMode = 0;
 bool bPIDMode = 0;
 
-//Servo8Bit servo; // declare servo object
+const byte SERVOS = 1; // number of servos
+const byte servoPin[SERVOS] = {SERVO}; // TODO: maybe should be pin 2 instead of 8
+#define STEERING_SERVO	0
 
 double fQE, fPWM, fSpeed, Kp = 2, Ki = 0.1, Kd = 1; // all required PID variables
 PID speedPID(&fQE, &fPWM, &fSpeed, Kp, Ki, Kd, DIRECT); // declare PID loop
@@ -100,7 +98,7 @@ void setup() {
 	TinyWireS.onReceive(receiveEvent); // register receive event
 	TinyWireS.onRequest(requestEvent); // register request event
 
-	//servo.attach(10);
+	setupServos();
 
 	// initialize PID variables
 	fQE = 0;
@@ -118,7 +116,7 @@ void setup() {
 	pinMode(STANDBY, OUTPUT);
 	pinMode(LAMP, OUTPUT);
 	pinMode(PWM, OUTPUT);
-	pinMode(SERVO, OUTPUT);
+	//pinMode(SERVO, OUTPUT);
 	pinMode(QEA, INPUT);
 	pinMode(QEB, INPUT);
 
@@ -150,10 +148,6 @@ void loop() {
 		} else {
 			fSpeed =  nI2CReg[1];
 		}
-
-		// get servo position
-		// servo function with speed = nI2CReg[4];
-		//servo.write(nI2CReg[4]);
 
 		analogWrite(LAMP, nI2CReg[5]); // update lamp brightness
 
@@ -198,6 +192,9 @@ void loop() {
 			nI2CReg[2] = 1;
 			nI2CReg[3] = (uint8_t)abs(fQE);
 		}
+
+		// set servo position
+		moveServo(STEERING_SERVO, nI2CReg[4]);
 	}
 }
 
