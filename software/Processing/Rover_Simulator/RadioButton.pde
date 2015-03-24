@@ -47,7 +47,7 @@ public class RadioButton {
 	void draw() {
 		if (over()) {
 			fill(cHoverColor);
-		} else if (bPressed){
+		} else if (bPressed) {
 			fill(cFillColor);
 		} else {
 			noFill();
@@ -61,7 +61,7 @@ public class RadioButton {
 	void draw(String sText) {
 		if (over()) {
 			fill(cHoverColor);
-		} else if (bPressed){
+		} else if (bPressed) {
 			fill(cFillColor);
 		} else {
 			noFill();

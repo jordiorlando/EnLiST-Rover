@@ -11,12 +11,11 @@ PFont f;  // Declare a font variable for on-screen text
 // Constant declarations
 int nMaxSpeed = 255;
 float fRadiusFactor = 500;
+float fRadiusFactorTemp = 500;
 float fWheelHeight = 40;
 float fWheelWidth = 20;
 
-// Whether or not the console is in focus
-boolean bConsoleFocus = false;
-// String to store the console input
+// String to store the keyboard input
 String sInputString = "";
 
 // Stick inputs, all of the range [-1, 1]
@@ -35,6 +34,9 @@ RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
 RadioButton drawRoverRadius = new RadioButton(15, 50, 5);
 RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
 RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
+
+// Text field for the radius multiplier
+TextField radiusFactor;
 
 // Wheel array
 Wheel[] wheels = new Wheel[6];
@@ -69,6 +71,10 @@ public void setup() {
 	drawRoverRadius.set(true);
 	drawRoverVelocity.set(true);
 	drawRoverRotation.set(true);
+
+	// BLAH
+	radiusFactor = new TextField(textWidth("Radius Factor: ") + 10, height - 15, textWidth("10000.0"));
+	radiusFactor.set(false);
 
 	// Wheel declarations
 	wheels[0] = new Wheel(STEERABLE, REVERSE, -150, 200);
@@ -162,7 +168,8 @@ public void draw() {
 		text("Drive Mode: 0", 10, 10);
 		drawRoverRadius.draw("Radius: " + fRoverRadius);
 		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
-		text("Radius Factor: " + fRadiusFactor, 10, height - 35);
+		text("Radius Factor: ", 10, height - 15);
+		radiusFactor.draw(Float.toString(fRadiusFactorTemp));
 	}
 
 	fill(48, 48, 48);
@@ -174,46 +181,40 @@ public void draw() {
 		text("Mast Mode: 0", width - fRightTextWidth, 10);
 	}
 	text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
-
-	// Draw console
-	drawConsole();
 }
 
 // Automatically called whenever a mouse button is pressed.
 void mousePressed() {
 	if (mouseButton == LEFT) {
-		// Check if the mouse is inside the console and set the appropriate flag
-		if (mouseY > height - 20) {
-			bConsoleFocus = true;
+		if (drawWheelIndicators.over()) {
+			drawWheelIndicators.toggle();
+		}
+
+		if (bDriveMode) {
+			if (drawRoverRotation.over()) {
+				drawRoverRotation.toggle();
+			}
 		} else {
-			bConsoleFocus = false;
+			float fRadiusWidth = textWidth("Radius Factor: ") + 10;
 
-			if (drawWheelIndicators.over()) {
-				drawWheelIndicators.toggle();
+			if (drawRoverRadius.over()) {
+				drawRoverRadius.toggle();
+			} else if (drawRoverVelocity.over()) {
+				drawRoverVelocity.toggle();
 			}
 
-			if (bDriveMode) {
-				if (drawRoverRotation.over()) {
-					drawRoverRotation.toggle();
-				}
+			if (radiusFactor.over()) {
+				radiusFactor.set(true);
 			} else {
-				//float fRadiusWidth = textWidth("Radius Factor: ") + 10;
-
-				if (drawRoverRadius.over()) {
-					drawRoverRadius.toggle();
-				} else if (drawRoverVelocity.over()) {
-					drawRoverVelocity.toggle();
-				} /*else if ((mouseX > fRadiusWidth) && (mouseX < fRadiusWidth + textWidth(Float.toString(fRadiusFactor))) && (mouseY > height - 45)) {
-					fill(255, 0, 0);
-					text("YAY!", 0, height / 2);
-				}*/
+				fRadiusFactorTemp = fRadiusFactor;
+				radiusFactor.set(false);
 			}
+		}
 
-			// Check if the mouse is over any of the wheels
-			for (Wheel wheel : wheels) {
-				if (wheel.over()) {
-					wheel.bPressed = !wheel.bPressed;
-				}
+		// Check if the mouse is over any of the wheels
+		for (Wheel wheel : wheels) {
+			if (wheel.over()) {
+				wheel.bPressed = !wheel.bPressed;
 			}
 		}
 	}
@@ -221,32 +222,27 @@ void mousePressed() {
 
 // Automatically called whenever a key is pressed on the keyboard.
 void keyPressed() {
-	// If there isn't anything in the console yet, bring it into focus
-	if (sInputString.length() == 0) {
-		bConsoleFocus = true;
-	}
-
-	// Only do stuff if the console is in focus
-	if (bConsoleFocus) {
+	if (radiusFactor.pressed()) {
 		if (key == '\n' ) {
-			// TODO: add cases for other operations/commands
-			if (sInputString.charAt(0) == 'm') {
-				changeDriveMode();
-			} else if (sInputString.charAt(0) == 'r'){
-				fRadiusFactor = Float.parseFloat(sInputString.substring(1));
-			}
-
+			fRadiusFactor = fRadiusFactorTemp;
 			sInputString = "";
 		} else if (key == 8) {
 			// If the backspace key is pressed, delete the last character in the
 			// input string.
-			if (sInputString.length() > 0) {
+			if (sInputString.length() > 1) {
 				sInputString = sInputString.substring(0, sInputString.length() - 1);
+				fRadiusFactorTemp = Float.parseFloat(sInputString);
+			} else if (sInputString.length() == 1) {
+				sInputString = "";
+				fRadiusFactorTemp = fRadiusFactor;
 			}
 		} else {
 			// Otherwise, concatenate the String. Each character typed by the
 			// user is added to the end of the input String.
-			sInputString = sInputString + key;
+			if (key > 47 && key < 58) {
+				sInputString = sInputString + key;
+				fRadiusFactorTemp = Float.parseFloat(sInputString);
+			}
 		}
 	}
 }
@@ -261,35 +257,6 @@ void changeDriveMode() {
 // to high. Toggles the control mode each time.
 void changeMastMode() {
 	bMastMode = !bMastMode;
-}
-
-// Draws the console at the bottom of the screen.
-void drawConsole() {
-	// Change the cursor on hover
-	if (mouseY > height - 20) {
-		cursor(TEXT);
-	} else {
-		cursor(ARROW);
-	}
-
-	// Draw console box
-	fill(48, 48, 48, 255);
-	noStroke();
-	rectMode(CORNERS);
-	rect(0, height - 20, width, height);
-
-	// Highlight the console text if it's in focus
-	if (bConsoleFocus) {
-		fill(255, 255, 255);
-
-		if (sInputString.length() == 0) {
-			rect(30, height - 18, 40, height - 2);
-		}
-	} else {
-		fill(255, 255, 255, 64);
-	}
-	// Draw console text
-	text(">> " + sInputString, 2, height - 12);
 }
 
 // Draws a circle that represents the path that the center of the rover will
