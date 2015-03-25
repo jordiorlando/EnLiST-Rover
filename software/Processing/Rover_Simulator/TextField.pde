@@ -3,86 +3,73 @@
 // TODO: finish comments
 public class TextField {
 	private boolean bPressed;
-	private float fXPos, fYPos, fWidth;
+	private float fXPos, fYPos, fWidth = 20;
 	private color cStrokeColor = color(48, 48, 48);
-	private color cFillColor = color(64, 64, 64);
-	private color cHoverColor = color(48, 48, 48);
+	private color cTextColor = color(48, 48, 48);
+	private color cHoverColor = color(64, 64, 64);
 
-	TextField(float fXTemp, float fYTemp, float fWidthTemp) {
+	TextField(float fXTemp, float fYTemp) {
 		fXPos = fXTemp;
 		fYPos = fYTemp;
-		fWidth = fWidthTemp;
 	}
 
-	TextField(float fXTemp, float fYTemp, float fWidthTemp,
+	TextField(float fXTemp, float fYTemp,
 	color cStrokeColorTemp) {
 		fXPos = fXTemp;
 		fYPos = fYTemp;
-		fWidth = fWidthTemp;
 		cStrokeColor = cStrokeColorTemp;
 	}
 
-	TextField(float fXTemp, float fYTemp, float fWidthTemp,
+	TextField(float fXTemp, float fYTemp,
 	color cStrokeColorTemp,
-	color cFillColorTemp) {
+	color cTextColorTemp) {
 		fXPos = fXTemp;
 		fYPos = fYTemp;
-		fWidth = fWidthTemp;
 		cStrokeColor = cStrokeColorTemp;
-		cFillColor = cFillColorTemp;
+		cTextColor = cTextColorTemp;
 	}
 
-	TextField(float fXTemp, float fYTemp, float fWidthTemp,
+	TextField(float fXTemp, float fYTemp,
 	color cStrokeColorTemp,
-	color cFillColorTemp,
+	color cTextColorTemp,
 	color cHoverColorTemp) {
 		fXPos = fXTemp;
 		fYPos = fYTemp;
-		fWidth = fWidthTemp;
 		cStrokeColor = cStrokeColorTemp;
-		cFillColor = cFillColorTemp;
+		cTextColor = cTextColorTemp;
 		cHoverColor = cHoverColorTemp;
 	}
 
 	void draw() {
-		if (bPressed) {
-			stroke(cStrokeColor);
-			strokeWeight(1);
-		} else {
-			noStroke();
-		}
-
-		fill(255, 255, 255);
-		rectMode(CORNER);
-		rect(fXPos - 2, fYPos - 10, fWidth + 4, 20);
-
-		if (over()) {
+		if (over() || bPressed) {
 			cursor(TEXT);
+			fill(255, 255, 255);
 		} else {
 			cursor(ARROW);
+			fill(222, 222, 222);
 		}
+
+		noStroke();
+		rectMode(CORNER);
+		rect(fXPos - 2, fYPos - 10, 24, 20, 2);
 	}
 
 	void draw(String sText) {
-		if (bPressed) {
-			stroke(cStrokeColor);
-			strokeWeight(1);
-		} else {
-			noStroke();
-		}
-
-		fill(255, 255, 255);
-		rectMode(CORNER);
-		rect(fXPos - 2, fYPos - 10, fWidth + 4, 20);
+		fWidth = textWidth(sText);
 
 		if (over() || bPressed) {
 			cursor(TEXT);
-			fill(cHoverColor);
+			fill(255, 255, 255);
 		} else {
 			cursor(ARROW);
-			fill(cFillColor);
+			fill(222, 222, 222);
 		}
 
+		noStroke();
+		rectMode(CORNER);
+		rect(fXPos - 2, fYPos - 10, fWidth + 4, 20, 2);
+
+		fill(cTextColor);
 		text(sText, fXPos, fYPos);
 	}
 

@@ -42,7 +42,7 @@ TextField radiusFactor;
 Wheel[] wheels = new Wheel[6];
 
 public void setup() {
-	size(1680, 1050);
+	size(displayWidth, displayHeight);
 
 	// Define the font and use it
 	f = createFont("Source Code Pro", 16, true);
@@ -73,7 +73,7 @@ public void setup() {
 	drawRoverRotation.set(true);
 
 	// BLAH
-	radiusFactor = new TextField(textWidth("Radius Factor: ") + 10, height - 15, textWidth("10000.0"));
+	radiusFactor = new TextField(textWidth("Radius Factor: ") + 10, height - 15);
 	radiusFactor.set(false);
 
 	// Wheel declarations
@@ -186,10 +186,6 @@ public void draw() {
 // Automatically called whenever a mouse button is pressed.
 void mousePressed() {
 	if (mouseButton == LEFT) {
-		if (drawWheelIndicators.over()) {
-			drawWheelIndicators.toggle();
-		}
-
 		if (bDriveMode) {
 			if (drawRoverRotation.over()) {
 				drawRoverRotation.toggle();
@@ -209,6 +205,12 @@ void mousePressed() {
 				fRadiusFactorTemp = fRadiusFactor;
 				radiusFactor.set(false);
 			}
+		}
+
+		if (drawWheelIndicators.over()) {
+			drawWheelIndicators.toggle();
+		} else if ((mouseX > width / 2 - 100) && (mouseX < width / 2 + 100) && (mouseY > height / 2 - 200) && (mouseY < height / 2 + 200)) {
+			changeDriveMode();
 		}
 
 		// Check if the mouse is over any of the wheels
