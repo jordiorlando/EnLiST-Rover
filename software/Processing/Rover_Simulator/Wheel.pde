@@ -22,6 +22,8 @@ public class Wheel {
 	// Flag to set whether or not the wheel has been pressed
 	private boolean bPressed = false;
 
+	private float fWheelHeight = 40, fWheelWidth = 20;
+
 	// Constructor. Takes an input to determine whether or not it is steerable
 	// as well as its horizontal and vertical offsets from the center of the
 	// rover.
@@ -79,7 +81,7 @@ public class Wheel {
 	}
 
 	// Converts the wheel angle to a servo position between -90 and 90 degrees.
-	private float servoPos() {
+	float servoPos() {
 		float fServoPos = 0;
 		if (bSteerable) {
 			fServoPos = fCenterAngle - fAngle;
@@ -153,7 +155,7 @@ public class Wheel {
 	}
 
 	// Draws a vector that represents the velocity of the wheel.
-	void drawVelocity() {
+	private void drawVelocity() {
 		// Don't draw anything if the wheel isn't turning
 		if (drawRoverVelocity.pressed() && (fVelocity != 0)) {
 			stroke(255, 255, 255);
@@ -163,7 +165,7 @@ public class Wheel {
 	}
 
 	// Draws the actual wheel itself.
-	void drawWheel() {
+	private void drawWheel() {
 		fill(48, 48, 48);
 		if (over()) {
 			stroke(0, 0, 0);

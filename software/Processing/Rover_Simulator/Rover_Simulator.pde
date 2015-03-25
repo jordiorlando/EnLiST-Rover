@@ -8,18 +8,15 @@ ControlDevice gpad;*/
 
 PFont f;  // Declare a font variable for on-screen text
 
-// Constant declarations
-int nMaxSpeed = 255;
-float fRadiusFactor = 500;
-float fRadiusFactorTemp = 500;
-float fWheelHeight = 40;
-float fWheelWidth = 20;
-
 // String to store the keyboard input
 String sInputString = "";
 
 // Stick inputs, all of the range [-1, 1]
 float X1Stick, Y1Stick, X2Stick, Y2Stick;
+
+// Constant declarations
+int nMaxSpeed = 255;
+float fRadiusFactor = 500, fRadiusFactorTemp = 500;
 // Global variables for defining the rover's motion
 float fRoverRadius = 0, fRoverVelocity, fRoverRotation;
 // Drive mode 0 is akin to a car, while 1 is only for rotating in place
@@ -28,6 +25,7 @@ boolean bDriveMode = false;
 boolean bMastMode = false;
 // Angle of the mast
 float fMastPan = 0;
+
 // Toggle for drawing the wheel indicators
 RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
 // Toggles for drawing the rover's turn radius and velocity
@@ -38,8 +36,7 @@ RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
 // Text field for the radius multiplier
 TextField radiusFactor;
 
-// Wheel array
-Wheel[] wheels = new Wheel[6];
+Rover rover = new Rover(200, 400);
 
 public void setup() {
 	size(displayWidth, displayHeight);
@@ -75,14 +72,6 @@ public void setup() {
 	// BLAH
 	radiusFactor = new TextField(textWidth("Radius Factor: ") + 10, height - 15);
 	radiusFactor.set(false);
-
-	// Wheel declarations
-	wheels[0] = new Wheel(STEERABLE, REVERSE, -150, 200);
-	wheels[1] = new Wheel(STEERABLE, NORMAL, 150, 200);
-	wheels[2] = new Wheel(STATIONARY, REVERSE, -150, 0);
-	wheels[3] = new Wheel(STATIONARY, NORMAL, 150, 0);
-	wheels[4] = new Wheel(STEERABLE, REVERSE, -150, -200);
-	wheels[5] = new Wheel(STEERABLE, NORMAL, 150, -200);
 }
 
 public void draw() {
@@ -119,44 +108,7 @@ public void draw() {
 		fRoverVelocity = nMaxSpeed * Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
 	}
 
-	// Update all wheels
-	for (Wheel wheel : wheels) {
-		wheel.update();
-	}
-
-	// Center the matrix (from now on, the origin is at (640, 360))
-	pushMatrix();
-	translate(width / 2, height / 2);
-
-	for (Wheel wheel : wheels) {
-		if (wheel.bPressed) {
-			wheel.drawRadius();
-		}
-	}
-
-	if (bDriveMode) {
-		drawBody();
-		drawMast();
-		if (drawRoverRotation.pressed()) {
-			drawRotation();
-		}
-	} else {
-		if (drawRoverRadius.pressed()) {
-			drawRadius();
-		}
-		drawBody();
-		drawMast();
-		if (drawRoverVelocity.pressed()) {
-			drawVelocity();
-		}
-	}
-
-	// Draw all wheels
-	for (Wheel wheel : wheels) {
-		wheel.draw();
-	}
-
-	popMatrix();
+	rover.draw();
 
 	// Display important information (HUD)
 	fill(48, 48, 48);
@@ -209,14 +161,14 @@ void mousePressed() {
 
 		if (drawWheelIndicators.over()) {
 			drawWheelIndicators.toggle();
-		} else if ((mouseX > width / 2 - 100) && (mouseX < width / 2 + 100) && (mouseY > height / 2 - 200) && (mouseY < height / 2 + 200)) {
+		} else if (rover.over()) {
 			changeDriveMode();
-		}
-
-		// Check if the mouse is over any of the wheels
-		for (Wheel wheel : wheels) {
-			if (wheel.over()) {
-				wheel.bPressed = !wheel.bPressed;
+		} else {
+			// Check if the mouse is over any of the wheels
+			for (Wheel wheel : rover.wheels) {
+				if (wheel.over()) {
+					wheel.bPressed = !wheel.bPressed;
+				}
 			}
 		}
 	}
@@ -261,95 +213,11 @@ void changeMastMode() {
 	bMastMode = !bMastMode;
 }
 
-// Draws a circle that represents the path that the center of the rover will
-// take.
-void drawRadius() {
-	noFill();
-	stroke(0, 0, 0, 200);
-	ellipseMode(RADIUS);
-	point(0, 0);
-
-	if (X1Stick == 0) {
-		// If we're going straight, just draw a line
-		line(0, -height / 2, 0, height / 2);
-	} else {
-		// If not, draw a circle, and a point at the center of that circle
-		point(-fRoverRadius, 0);
-		ellipse(-fRoverRadius, 0, abs(fRoverRadius), abs(fRoverRadius));
-	}
-}
-
-// Draws a vector that represents the translational velocity of the center of
-// the rover.
-void drawVelocity() {
-	// Don't draw anything if the rover isn't moving
-	if (fRoverVelocity != 0) {
-		stroke(0, 0, 0, 255);
-		line(0, 0, 0, -fRoverVelocity / 2);
-		line(-10, -fRoverVelocity / 2, 10, -fRoverVelocity / 2);
-	}
-}
-
-// Draws a nice curvy vector-thing that represents the rover's rotation about
-// its center.
-void drawRotation() {
-	noFill();
-	stroke(0, 0, 0, 255);
-	ellipseMode(RADIUS);
-
-	// Only necessary because Processing does not allow negative angles in arcs
-	if (fRoverRotation < 0) {
-		arc(0, 0, 50, 50, 0, -fRoverRotation * TWO_PI);
-	} else {
-		arc(0, 0, 50, 50, TWO_PI - fRoverRotation * TWO_PI, TWO_PI);
-	}
-
-	// Only draw the tip of the arrow if the rover is actually turning
-	if (fRoverRotation != 0) {
-		point(0, 0);
-		pushMatrix();
-		rotate(-fRoverRotation * TWO_PI);
-		line(45, 0, 55, 0);
-		popMatrix();
-	}
-}
-
-// Draws the body of the rover. Just a stationary, semi-translucent rectangle.
-void drawBody() {
-	fill(255, 255, 255, 127);
-	stroke(0, 0, 0, 127);
-	rectMode(RADIUS);
-	rect(0, 0, 100, 200, 5);
-}
-
-// Draws the camera mast on the front of the rover
-void drawMast() {
-	pushMatrix();
-	translate(0, -175);
-	if (bMastMode) {
-		float fNew = X2Stick * PI / 100;
-		if (abs(fMastPan + fNew) <= PI) {
-			fMastPan += fNew;
-		}
-	} else {
-		fMastPan = X2Stick * PI;
-	}
-	rotate(fMastPan);
-
-	fill(48, 48, 48, 255);
-	noStroke();
-	rectMode(RADIUS);
-	rect(0, 0, 50, 15, 10);
-	rect(0, 10, 25, 10, 10);
-
-	popMatrix();
-}
-
 // Returns the value of the maximum distance of any wheel from its center to the
 // center of rotation of the rover.
 float maxRadius(float fRadius) {
 	float fMaxRadius = 0;
-	for (Wheel wheel : wheels) {
+	for (Wheel wheel : rover.wheels) {
 		if (wheel.radius(fRadius) > fMaxRadius) {
 			fMaxRadius = wheel.radius(fRadius);
 		}
