@@ -51,7 +51,7 @@ public class TextField {
 
 		noStroke();
 		rectMode(CORNER);
-		rect(fXPos - 2, fYPos - 10, 24, 20, 2);
+		rect(fXPos - 2, fYPos - 6, 24, 16, 2);
 	}
 
 	void draw(String sText) {
@@ -67,7 +67,7 @@ public class TextField {
 
 		noStroke();
 		rectMode(CORNER);
-		rect(fXPos - 2, fYPos - 10, fWidth + 4, 20, 2);
+		rect(fXPos - 2, fYPos - 6, fWidth + 4, 16, 2);
 
 		fill(cTextColor);
 		text(sText, fXPos, fYPos);
@@ -78,7 +78,7 @@ public class TextField {
 	}
 
 	boolean over() {
-		if ((mouseX > fXPos - 2) && (mouseX < fXPos + fWidth + 4) && (mouseY > fYPos - 10) && (mouseY < fYPos + 10)) {
+		if ((mouseX > fXPos - 2) && (mouseX < fXPos + fWidth + 4) && (mouseY > fYPos - 6) && (mouseY < fYPos + 10)) {
 			return true;
 		} else {
 			return false;

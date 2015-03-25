@@ -157,7 +157,7 @@ public class Wheel {
 	// Draws a vector that represents the velocity of the wheel.
 	private void drawVelocity() {
 		// Don't draw anything if the wheel isn't turning
-		if (drawRoverVelocity.pressed() && (fVelocity != 0)) {
+		if (fVelocity != 0) {
 			stroke(255, 255, 255);
 			line(0, 0, fVelocity / 8, 0);
 			line(fVelocity / 8, -2, fVelocity / 8, 2);
@@ -200,8 +200,8 @@ public class Wheel {
 		stroke(0, 0, 0);
 		if (bPressed) {
 			point(0, 0);
+			drawVelocity();
 		}
-		drawVelocity();
 
 		popMatrix();
 

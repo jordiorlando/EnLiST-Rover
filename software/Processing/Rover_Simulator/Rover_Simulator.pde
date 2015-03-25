@@ -121,7 +121,7 @@ public void draw() {
 		drawRoverRadius.draw("Radius: " + fRoverRadius);
 		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
 		text("Radius Factor: ", 10, height - 15);
-		radiusFactor.draw(Float.toString(fRadiusFactorTemp));
+		radiusFactor.draw(String.format("%.0f", fRadiusFactorTemp));
 	}
 
 	fill(48, 48, 48);
