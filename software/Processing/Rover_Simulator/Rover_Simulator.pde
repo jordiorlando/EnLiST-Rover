@@ -16,7 +16,7 @@ float X1Stick, Y1Stick, X2Stick, Y2Stick;
 
 // Constant declarations
 int nMaxSpeed = 255;
-float fRadiusFactor = 500, fRadiusFactorTemp = 500;
+float fRadiusMultiplier = 500, fRadiusMultiplierTemp = 500;
 // Global variables for defining the rover's motion
 float fRoverRadius = 0, fRoverVelocity, fRoverRotation;
 // Drive mode 0 is akin to a car, while 1 is only for rotating in place
@@ -34,12 +34,18 @@ RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
 RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
 
 // Text field for the radius multiplier
-TextField radiusFactor;
+TextField radiusMultiplier = new TextField();
 
-Rover rover = new Rover(200, 400);
+// The actual rover object. Includes body, wheels, and mast.
+Rover rover = new Rover(250, 500);
 
 public void setup() {
+	// Set display size to the size of the computer's screen, but makes it
+	// resizable as well.
 	size(displayWidth, displayHeight);
+	if (frame != null) {
+		frame.setResizable(true);
+	}
 
 	// Define the font and use it
 	f = createFont("Source Code Pro", 16, true);
@@ -69,9 +75,8 @@ public void setup() {
 	drawRoverVelocity.set(true);
 	drawRoverRotation.set(true);
 
-	// BLAH
-	radiusFactor = new TextField(textWidth("Radius Factor: ") + 10, height - 15);
-	radiusFactor.set(false);
+	// Initialize the radius multiplier text field
+	radiusMultiplier.set(false);
 }
 
 public void draw() {
@@ -103,36 +108,16 @@ public void draw() {
 		} else if (X1Stick == 1) {
 			fRoverRadius = -Float.MIN_NORMAL;
 		} else {
-			fRoverRadius = fRadiusFactor * tan(HALF_PI*(X1Stick + 1));
+			fRoverRadius = fRadiusMultiplier * tan(HALF_PI*(X1Stick + 1));
 		}
-		fRoverVelocity = nMaxSpeed * Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
+		fRoverVelocity = Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
 	}
 
+	// Draw the rover
 	rover.draw();
 
-	// Display important information (HUD)
-	fill(48, 48, 48);
-	drawWheelIndicators.draw("Wheel Indicators");
-	if (bDriveMode) {
-		text("Drive Mode: 1", 10, 10);
-		drawRoverRotation.draw("Rotation: " + fRoverRotation);
-	} else {
-		text("Drive Mode: 0", 10, 10);
-		drawRoverRadius.draw("Radius: " + fRoverRadius);
-		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
-		text("Radius Factor: ", 10, height - 15);
-		radiusFactor.draw(String.format("%.0f", fRadiusFactorTemp));
-	}
-
-	fill(48, 48, 48);
-	strokeWeight(2);
-	float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
-	if (bMastMode) {
-		text("Mast Mode: 1", width - fRightTextWidth, 10);
-	} else {
-		text("Mast Mode: 0", width - fRightTextWidth, 10);
-	}
-	text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
+	// Draw the HUD
+	drawHUD();
 }
 
 // Automatically called whenever a mouse button is pressed.
@@ -143,7 +128,7 @@ void mousePressed() {
 				drawRoverRotation.toggle();
 			}
 		} else {
-			float fRadiusWidth = textWidth("Radius Factor: ") + 10;
+			float fRadiusWidth = textWidth("Radius Multiplier: ") + 10;
 
 			if (drawRoverRadius.over()) {
 				drawRoverRadius.toggle();
@@ -151,11 +136,11 @@ void mousePressed() {
 				drawRoverVelocity.toggle();
 			}
 
-			if (radiusFactor.over()) {
-				radiusFactor.set(true);
+			if (radiusMultiplier.over()) {
+				radiusMultiplier.set(true);
 			} else {
-				fRadiusFactorTemp = fRadiusFactor;
-				radiusFactor.set(false);
+				fRadiusMultiplierTemp = fRadiusMultiplier;
+				radiusMultiplier.set(false);
 			}
 		}
 
@@ -165,9 +150,9 @@ void mousePressed() {
 			changeDriveMode();
 		} else {
 			// Check if the mouse is over any of the wheels
-			for (Wheel wheel : rover.wheels) {
+			for (Rover.Wheel wheel : rover.wheels) {
 				if (wheel.over()) {
-					wheel.bPressed = !wheel.bPressed;
+					wheel.toggle();
 				}
 			}
 		}
@@ -176,26 +161,26 @@ void mousePressed() {
 
 // Automatically called whenever a key is pressed on the keyboard.
 void keyPressed() {
-	if (radiusFactor.pressed()) {
+	if (radiusMultiplier.pressed()) {
 		if (key == '\n' ) {
-			fRadiusFactor = fRadiusFactorTemp;
+			fRadiusMultiplier = fRadiusMultiplierTemp;
 			sInputString = "";
 		} else if (key == 8) {
 			// If the backspace key is pressed, delete the last character in the
 			// input string.
 			if (sInputString.length() > 1) {
 				sInputString = sInputString.substring(0, sInputString.length() - 1);
-				fRadiusFactorTemp = Float.parseFloat(sInputString);
+				fRadiusMultiplierTemp = Float.parseFloat(sInputString);
 			} else if (sInputString.length() == 1) {
 				sInputString = "";
-				fRadiusFactorTemp = fRadiusFactor;
+				fRadiusMultiplierTemp = fRadiusMultiplier;
 			}
 		} else {
 			// Otherwise, concatenate the String. Each character typed by the
 			// user is added to the end of the input String.
 			if (key > 47 && key < 58) {
 				sInputString = sInputString + key;
-				fRadiusFactorTemp = Float.parseFloat(sInputString);
+				fRadiusMultiplierTemp = Float.parseFloat(sInputString);
 			}
 		}
 	}
@@ -217,11 +202,40 @@ void changeMastMode() {
 // center of rotation of the rover.
 float maxRadius(float fRadius) {
 	float fMaxRadius = 0;
-	for (Wheel wheel : rover.wheels) {
+	for (Rover.Wheel wheel : rover.wheels) {
 		if (wheel.radius(fRadius) > fMaxRadius) {
 			fMaxRadius = wheel.radius(fRadius);
 		}
 	}
 
 	return fMaxRadius;
+}
+
+void drawHUD() {
+	// Left side (drive)
+	fill(48, 48, 48);
+	drawWheelIndicators.draw("Wheel Indicators");
+	// Different rules for each mode
+	if (bDriveMode) {
+		text("Drive Mode: 1", 10, 10);
+		drawRoverRotation.draw("Rotation: " + fRoverRotation);
+	} else {
+		text("Drive Mode: 0", 10, 10);
+		drawRoverRadius.draw("Radius: " + fRoverRadius);
+		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
+		text("Radius Multiplier: ", 10, height - 15);
+		radiusMultiplier.draw(String.format("%.0f", fRadiusMultiplierTemp), textWidth("Radius Multiplier: ") + 10, height - 15);
+	}
+
+	// Right side (mast)
+	fill(48, 48, 48);
+	strokeWeight(2);
+	float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
+	// Different rules for each mode
+	if (bMastMode) {
+		text("Mast Mode: 1", width - fRightTextWidth, 10);
+	} else {
+		text("Mast Mode: 0", width - fRightTextWidth, 10);
+	}
+	text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
 }

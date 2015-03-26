@@ -8,33 +8,19 @@ public class TextField {
 	private color cTextColor = color(48, 48, 48);
 	private color cHoverColor = color(64, 64, 64);
 
-	TextField(float fXTemp, float fYTemp) {
-		fXPos = fXTemp;
-		fYPos = fYTemp;
+	TextField() {
 	}
 
-	TextField(float fXTemp, float fYTemp,
-	color cStrokeColorTemp) {
-		fXPos = fXTemp;
-		fYPos = fYTemp;
+	TextField(color cStrokeColorTemp) {
 		cStrokeColor = cStrokeColorTemp;
 	}
 
-	TextField(float fXTemp, float fYTemp,
-	color cStrokeColorTemp,
-	color cTextColorTemp) {
-		fXPos = fXTemp;
-		fYPos = fYTemp;
+	TextField(color cStrokeColorTemp, color cTextColorTemp) {
 		cStrokeColor = cStrokeColorTemp;
 		cTextColor = cTextColorTemp;
 	}
 
-	TextField(float fXTemp, float fYTemp,
-	color cStrokeColorTemp,
-	color cTextColorTemp,
-	color cHoverColorTemp) {
-		fXPos = fXTemp;
-		fYPos = fYTemp;
+	TextField(color cStrokeColorTemp, color cTextColorTemp, color cHoverColorTemp) {
 		cStrokeColor = cStrokeColorTemp;
 		cTextColor = cTextColorTemp;
 		cHoverColor = cHoverColorTemp;
@@ -55,6 +41,27 @@ public class TextField {
 	}
 
 	void draw(String sText) {
+		fWidth = textWidth(sText);
+
+		if (over() || bPressed) {
+			cursor(TEXT);
+			fill(255, 255, 255);
+		} else {
+			cursor(ARROW);
+			fill(222, 222, 222);
+		}
+
+		noStroke();
+		rectMode(CORNER);
+		rect(fXPos - 2, fYPos - 6, fWidth + 4, 16, 2);
+
+		fill(cTextColor);
+		text(sText, fXPos, fYPos);
+	}
+
+	void draw(String sText, float fXTemp, float fYTemp) {
+		fXPos = fXTemp;
+		fYPos = fYTemp;
 		fWidth = textWidth(sText);
 
 		if (over() || bPressed) {
