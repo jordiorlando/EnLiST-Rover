@@ -236,25 +236,33 @@ public class Rover {
 		}
 
 		float wheelVelocity() {
-			return fVelocity * nMaxSpeed;
+			float fWheelVelocity = fVelocity * nMaxSpeed;
+			if (fWheelVelocity == -0) {
+				fWheelVelocity = 0;
+			}
+			
+			return fWheelVelocity;
 		}
 
 		// Converts the wheel angle to a servo position between -90 and 90 degrees.
 		float servoAngle() {
 			float fServoPosition = 0;
 			if (bSteerable) {
-				fServoPosition = fCenterAngle - fAngle;
+				fServoPosition = fAngle - fCenterAngle;
 
 				// Bound anything that is too large or too small
 				if ((fXPos * fYPos) < 0) {
-					fServoPosition += PI;
-					if (fServoPosition > PI) {
-						fServoPosition -= TWO_PI;
+					fServoPosition -= PI;
+					if (fServoPosition < -PI) {
+						fServoPosition += TWO_PI;
 					}
-				} else if (fServoPosition < -PI){
-					fServoPosition += TWO_PI;
+				} else if (fServoPosition > PI){
+					fServoPosition -= TWO_PI;
 				}
 			}
+
+			fServoPosition += HALF_PI;
+			fServoPosition = abs(fServoPosition);
 
 			return fServoPosition;
 		}
