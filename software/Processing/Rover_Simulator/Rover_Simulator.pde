@@ -1,10 +1,12 @@
-/*import org.gamecontrolplus.gui.*;
+import processing.serial.*; // Only necessary for Arduino serial
+
+import org.gamecontrolplus.gui.*;
 import org.gamecontrolplus.*;
 import net.java.games.input.*;
 
 ControlIO control;
 Configuration config;
-ControlDevice gpad;*/
+ControlDevice gpad;
 
 PFont f;  // Declare a font variable for on-screen text
 
@@ -39,6 +41,9 @@ TextField radiusMultiplier = new TextField();
 // The actual rover object. Includes body, wheels, and mast.
 Rover rover = new Rover(250, 500);
 
+// Declare a serial port for the Arduino
+Serial arduinoPort;
+
 public void setup() {
 	// Set display size to the size of the computer's screen, but makes it
 	// resizable as well.
@@ -52,7 +57,7 @@ public void setup() {
 	textFont(f, 16);
 	textAlign(LEFT, CENTER);
 
-	/*// Initialise the ControlIO
+	// Initialise the ControlIO
 	control = ControlIO.getInstance(this);
 	// Find a device that matches the configuration file
 	gpad = control.getMatchedDevice("ChillStream");
@@ -67,7 +72,7 @@ public void setup() {
 
 	// Register a listener so that changeMastMode() is called every time the
 	// right stick is pressed.
-	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);*/
+	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
 
 	// Initialize radio buttons
 	drawWheelIndicators.set(true);
@@ -77,6 +82,11 @@ public void setup() {
 
 	// Initialize the radius multiplier text field
 	radiusMultiplier.set(false);
+
+	// Initialize serial port
+	//println(Serial.list()[9]);
+	String sPortName = Serial.list()[9];
+	arduinoPort = new Serial(this, sPortName, 115200);
 }
 
 public void draw() {
@@ -85,14 +95,14 @@ public void draw() {
 	strokeWeight(2);
 
 	// Get gamepad values for the requisite sliders
-	/*X1Stick = gpad.getSlider("X1").getValue();
+	X1Stick = gpad.getSlider("X1").getValue();
 	Y1Stick = gpad.getSlider("Y1").getValue();
 	X2Stick = gpad.getSlider("X2").getValue();
-	Y2Stick = gpad.getSlider("Y2").getValue();*/
+	Y2Stick = gpad.getSlider("Y2").getValue();
 
 	// Use mouse position instead of a gamepad
-	X1Stick = (float(mouseX) * 2 / width) - 1;
-	Y1Stick = 1 - (float(mouseY) * 2 / height);
+	/*X1Stick = (float(mouseX) * 2 / width) - 1;
+	Y1Stick = 1 - (float(mouseY) * 2 / height);*/
 
 	// Different rules for each mode
 	if (bDriveMode) {
@@ -118,6 +128,10 @@ public void draw() {
 
 	// Draw the HUD
 	drawHUD();
+
+	// Write wheel0's servo position to the Arduino
+	arduinoPort.write('v' + String.format("%.0f", rover.wheels[0].wheelVelocity()));
+	arduinoPort.write('s' + String.format("%.0f", degrees(rover.wheels[0].servoAngle()) + 10));
 }
 
 // Automatically called whenever a mouse button is pressed.
