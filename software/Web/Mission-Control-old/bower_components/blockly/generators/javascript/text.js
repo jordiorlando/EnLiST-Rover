@@ -24,7 +24,7 @@
  */
 'use strict';
 
-goog.provide('Blockly.JavaScript.text');
+goog.provide('Blockly.JavaScript.texts');
 
 goog.require('Blockly.JavaScript');
 
@@ -216,8 +216,8 @@ Blockly.JavaScript['text_changeCase'] = function(block) {
 Blockly.JavaScript['text_trim'] = function(block) {
   // Trim spaces.
   var OPERATORS = {
-    'LEFT': '.trimLeft()',
-    'RIGHT': '.trimRight()',
+    'LEFT': ".replace(/^[\\s\\xa0]+/, '')",
+    'RIGHT': ".replace(/[\\s\\xa0]+$/, '')",
     'BOTH': '.trim()'
   };
   var operator = OPERATORS[block.getFieldValue('MODE')];

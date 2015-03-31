@@ -29,6 +29,8 @@ goog.provide('Blockly.inject');
 goog.require('Blockly.Css');
 goog.require('Blockly.WorkspaceSvg');
 goog.require('goog.dom');
+goog.require('goog.ui.Component');
+goog.require('goog.userAgent');
 
 
 /**
@@ -126,6 +128,10 @@ Blockly.parseOptions_ = function(options) {
   if (hasSounds === undefined) {
     hasSounds = true;
   }
+  var hasCss = options['css'];
+  if (hasCss === undefined) {
+    hasCss = true;
+  }
   var enableRealtime = !!options['realtime'];
   var realtimeOptions = enableRealtime ? options['realtimeOptions'] : undefined;
 
@@ -145,6 +151,7 @@ Blockly.parseOptions_ = function(options) {
   Blockly.hasScrollbars = hasScrollbars;
   Blockly.hasTrashcan = hasTrashcan;
   Blockly.hasSounds = hasSounds;
+  Blockly.hasCss = hasCss;
   Blockly.languageTree = tree;
   Blockly.enableRealtime = enableRealtime;
   Blockly.realtimeOptions = realtimeOptions;
@@ -261,6 +268,7 @@ Blockly.createDom_ = function(container) {
       {'width': 10, 'height': 10, 'fill': '#aaa'}, pattern);
   Blockly.createSvgElement('path',
       {'d': 'M 0 0 L 10 10 M 10 0 L 0 10', 'stroke': '#cc0'}, pattern);
+
   Blockly.mainWorkspace = new Blockly.WorkspaceSvg(
       Blockly.getMainWorkspaceMetrics_,
       Blockly.setMainWorkspaceMetrics_);
@@ -272,17 +280,8 @@ Blockly.createDom_ = function(container) {
     // blocks.  This cannot be changed later, since the UI is very different.
     if (Blockly.hasCategories) {
       Blockly.mainWorkspace.toolbox_ = new Blockly.Toolbox(svg, container);
-    } else {
-      /**
-       * @type {!Blockly.Flyout}
-       * @private
-       */
-      Blockly.mainWorkspace.flyout_ = new Blockly.Flyout();
-      var flyout = Blockly.mainWorkspace.flyout_;
-      var flyoutSvg = flyout.createDom();
-      flyout.autoClose = false;
-      // Insert the flyout behind the workspace so that blocks appear on top.
-      goog.dom.insertSiblingBefore(flyoutSvg, Blockly.mainWorkspace.svgGroup_);
+    } else if (Blockly.languageTree) {
+      Blockly.mainWorkspace.addFlyout();
     }
     if (!Blockly.hasScrollbars) {
       var workspaceChanged = function() {
@@ -383,7 +382,7 @@ Blockly.init_ = function() {
 
   if (Blockly.languageTree) {
     if (Blockly.mainWorkspace.toolbox_) {
-      Blockly.mainWorkspace.toolbox_.init();
+      Blockly.mainWorkspace.toolbox_.init(Blockly.mainWorkspace);
     } else if (Blockly.mainWorkspace.flyout_) {
       // Build a fixed flyout with the root blocks.
       Blockly.mainWorkspace.flyout_.init(Blockly.mainWorkspace);

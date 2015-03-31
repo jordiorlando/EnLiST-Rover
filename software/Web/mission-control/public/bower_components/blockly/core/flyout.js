@@ -29,6 +29,8 @@ goog.provide('Blockly.Flyout');
 goog.require('Blockly.Block');
 goog.require('Blockly.Comment');
 goog.require('Blockly.WorkspaceSvg');
+goog.require('goog.dom');
+goog.require('goog.events');
 goog.require('goog.math.Rect');
 goog.require('goog.userAgent');
 
@@ -271,6 +273,13 @@ Blockly.Flyout.prototype.position_ = function() {
   if (this.scrollbar_) {
     this.scrollbar_.resize();
   }
+};
+
+/**
+ * Scroll the flyout to the top.
+ */
+Blockly.Flyout.prototype.scrollToTop = function() {
+  this.scrollbar_.set(0);
 };
 
 /**

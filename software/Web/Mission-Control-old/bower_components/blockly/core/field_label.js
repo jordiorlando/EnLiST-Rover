@@ -28,6 +28,7 @@ goog.provide('Blockly.FieldLabel');
 
 goog.require('Blockly.Field');
 goog.require('Blockly.Tooltip');
+goog.require('goog.dom');
 goog.require('goog.math.Size');
 
 
@@ -72,6 +73,9 @@ Blockly.FieldLabel.prototype.init = function(block) {
   // Build the DOM.
   this.textElement_ = Blockly.createSvgElement('text',
       {'class': 'blocklyText'}, null);
+  if (!this.visible_) {
+    this.textElement_.style.display = 'none';
+  }
   block.getSvgRoot().appendChild(this.textElement_);
 
   // Configure the field to be transparent with respect to tooltips.

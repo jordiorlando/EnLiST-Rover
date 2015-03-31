@@ -28,6 +28,7 @@ goog.provide('Blockly.Xml');
 
 // TODO(scr): Fix circular dependencies
 // goog.require('Blockly.Block');
+goog.require('goog.dom');
 
 
 /**
@@ -92,6 +93,13 @@ Blockly.Xml.blockToDom_ = function(block) {
       commentElement.setAttribute('w', hw.width);
     }
     element.appendChild(commentElement);
+  }
+
+  if (block.data) {
+    // Optional text data that round-trips beween blocks and XML.
+    // Has no effect.  May be used by 3rd parties for meta information.
+    var dataElement = goog.dom.createDom('data', null, block.data);
+    element.appendChild(dataElement);
   }
 
   var hasValues = false;
@@ -218,7 +226,12 @@ Blockly.Xml.domToWorkspace = function(workspace, xml) {
   if (Blockly.RTL) {
     width = workspace.getWidth();
   }
-  for (var i = 0, xmlChild; xmlChild = xml.childNodes[i]; i++) {
+  // Safari 7.1.3 is known to provide node lists with extra references to
+  // children beyond the lists' length.  Trust the length, do not use the
+  // looping pattern of checking the index for an object.
+  var childCount = xml.childNodes.length;
+  for (var i = 0; i < childCount; i++) {
+    var xmlChild = xml.childNodes[i];
     if (xmlChild.nodeName.toLowerCase() == 'block') {
       var block = Blockly.Xml.domToBlock(workspace, xmlChild);
       var blockX = parseInt(xmlChild.getAttribute('x'), 10);
@@ -350,6 +363,11 @@ Blockly.Xml.domToBlockHeadless_ =
             block.comment && block.comment.setVisible) {
           block.comment.setBubbleSize(bubbleW, bubbleH);
         }
+        break;
+      case 'data':
+        // Optional text data that round-trips beween blocks and XML.
+        // Has no effect.  May be used by 3rd parties for meta information.
+        block.data = xmlChild.textContent;
         break;
       case 'title':
         // Titles were renamed to field in December 2013.

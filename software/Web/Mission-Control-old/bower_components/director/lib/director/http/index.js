@@ -124,7 +124,7 @@ Router.prototype.dispatch = function (req, res, callback) {
   //
   // Trap bad URLs from `decodeUri`
   //
-  try { url = decodeURI(req.url.split('?', 1)[0]) }
+  try { url = decodeURI(req.url.split('?', 1)[0]); }
   catch (ex) { url = null }
 
   if (url && this._hasAccepts) {
@@ -140,7 +140,7 @@ Router.prototype.dispatch = function (req, res, callback) {
   }
 
   if (this._attach) {
-    for (var i in this._attach) {
+    for (var i = 0; i < this._attach.length; i++) {
       this._attach[i].call(thisArg);
     }
   }

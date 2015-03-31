@@ -30,6 +30,8 @@ goog.provide('Blockly.Mutator');
 goog.require('Blockly.Bubble');
 goog.require('Blockly.Icon');
 goog.require('Blockly.WorkspaceSvg');
+goog.require('goog.dom');
+goog.require('goog.Timer');
 
 
 /**
@@ -135,8 +137,10 @@ Blockly.Mutator.prototype.updateEditable = function() {
   } else {
     // Close any mutator bubble.  Icon is not clickable.
     this.setVisible(false);
-    Blockly.removeClass_(/** @type {!Element} */ (this.iconGroup_),
-                         'blocklyIconGroup');
+    if (this.iconGroup_) {
+      Blockly.removeClass_(/** @type {!Element} */ (this.iconGroup_),
+                           'blocklyIconGroup');
+    }
   }
 };
 
@@ -282,6 +286,8 @@ Blockly.Mutator.prototype.workspaceChanged_ = function() {
     this.resizeBubble_();
     // The source block may have changed, notify its workspace.
     this.block_.workspace.fireChangeEvent();
+    goog.Timer.callOnce(
+        this.block_.bumpNeighbours_, Blockly.BUMP_DELAY, this.block_);
   }
 };
 

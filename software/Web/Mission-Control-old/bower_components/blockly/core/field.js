@@ -29,6 +29,7 @@
 goog.provide('Blockly.Field');
 
 goog.require('goog.asserts');
+goog.require('goog.dom');
 goog.require('goog.math.Size');
 goog.require('goog.userAgent');
 
@@ -88,6 +89,9 @@ Blockly.Field.prototype.init = function(block) {
   this.sourceBlock_ = block;
   // Build the DOM.
   this.fieldGroup_ = Blockly.createSvgElement('g', {}, null);
+  if (!this.visible_) {
+    this.fieldGroup_.style.display = 'none';
+  }
   this.borderRect_ = Blockly.createSvgElement('rect',
       {'rx': 4,
        'ry': 4,
@@ -124,7 +128,7 @@ Blockly.Field.prototype.dispose = function() {
  * Add or remove the UI indicating if this field is editable or not.
  */
 Blockly.Field.prototype.updateEditable = function() {
-  if (!this.EDITABLE) {
+  if (!this.EDITABLE || !this.sourceBlock_) {
     return;
   }
   if (this.sourceBlock_.isEditable()) {
@@ -184,7 +188,7 @@ Blockly.Field.prototype.render_ = function() {
   if (this.visible_ && this.textElement_) {
     try {
       var width = this.textElement_.getComputedTextLength();
-    } catch(e) {
+    } catch (e) {
       // MSIE 11 is known to throw "Unexpected call to method or property
       // access." if Blockly is hidden.
       var width = this.textElement_.textContent.length * 8;
@@ -291,8 +295,9 @@ Blockly.Field.prototype.setValue = function(text) {
  */
 Blockly.Field.prototype.onMouseUp_ = function(e) {
   if ((goog.userAgent.IPHONE || goog.userAgent.IPAD) &&
+      !goog.userAgent.isVersionOrHigher('537.51.2') &&
       e.layerX !== 0 && e.layerY !== 0) {
-    // iOS spawns a bogus event on the next touch after a 'prompt()' edit.
+    // Old iOS spawns a bogus event on the next touch after a 'prompt()' edit.
     // Unlike the real events, these have a layerX and layerY set.
     return;
   } else if (Blockly.isRightButton(e)) {

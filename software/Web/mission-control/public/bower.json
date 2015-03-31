@@ -21,6 +21,6 @@
     "paper-elements": "polymer/paper-elements",
     "core-elements": "polymer/core-elements",
     "blockly": "google/blockly",
-    "Chart.js": "nnnick/Chart.js#1.0.1"
+    "Chart.js": "nnnick/Chart.js"
   }
 }

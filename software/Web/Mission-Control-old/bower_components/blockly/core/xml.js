@@ -28,6 +28,7 @@ goog.provide('Blockly.Xml');
 
 // TODO(scr): Fix circular dependencies
 // goog.require('Blockly.Block');
+goog.require('goog.dom');
 
 
 /**
@@ -38,7 +39,7 @@ goog.provide('Blockly.Xml');
 Blockly.Xml.workspaceToDom = function(workspace) {
   var width;  // Not used in LTR.
   if (Blockly.RTL) {
-    width = workarea.getWidth();
+    width = workspace.getWidth();
   }
   var xml = goog.dom.createDom('xml');
   var blocks = workspace.getTopBlocks(true);
@@ -76,8 +77,8 @@ Blockly.Xml.blockToDom_ = function(block) {
       element.appendChild(container);
     }
   }
-  for (var x = 0, input; input = block.inputList[x]; x++) {
-    for (var y = 0, field; field = input.fieldRow[y]; y++) {
+  for (var i = 0, input; input = block.inputList[i]; i++) {
+    for (var j = 0, field; field = input.fieldRow[j]; j++) {
       fieldToDom(field);
     }
   }
@@ -92,6 +93,13 @@ Blockly.Xml.blockToDom_ = function(block) {
       commentElement.setAttribute('w', hw.width);
     }
     element.appendChild(commentElement);
+  }
+
+  if (block.data) {
+    // Optional text data that round-trips beween blocks and XML.
+    // Has no effect.  May be used by 3rd parties for meta information.
+    var dataElement = goog.dom.createDom('data', null, block.data);
+    element.appendChild(dataElement);
   }
 
   var hasValues = false;
@@ -171,12 +179,12 @@ Blockly.Xml.domToPrettyText = function(dom) {
   var lines = blob.split('<');
   // Indent every line.
   var indent = '';
-  for (var x = 1; x < lines.length; x++) {
-    var line = lines[x];
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i];
     if (line[0] == '/') {
       indent = indent.substring(2);
     }
-    lines[x] = indent + '<' + line;
+    lines[i] = indent + '<' + line;
     if (line[0] != '/' && line.slice(-2) != '/>') {
       indent += '  ';
     }
@@ -218,7 +226,12 @@ Blockly.Xml.domToWorkspace = function(workspace, xml) {
   if (Blockly.RTL) {
     width = workspace.getWidth();
   }
-  for (var x = 0, xmlChild; xmlChild = xml.childNodes[x]; x++) {
+  // Safari 7.1.3 is known to provide node lists with extra references to
+  // children beyond the lists' length.  Trust the length, do not use the
+  // looping pattern of checking the index for an object.
+  var childCount = xml.childNodes.length;
+  for (var i = 0; i < childCount; i++) {
+    var xmlChild = xml.childNodes[i];
     if (xmlChild.nodeName.toLowerCase() == 'block') {
       var block = Blockly.Xml.domToBlock(workspace, xmlChild);
       var blockX = parseInt(xmlChild.getAttribute('x'), 10);
@@ -240,6 +253,45 @@ Blockly.Xml.domToWorkspace = function(workspace, xml) {
  * @return {!Blockly.Block} The root block created.
  */
 Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
+  // Create top-level block.
+  var topBlock = Blockly.Xml.domToBlockHeadless_(workspace, xmlBlock,
+                                                 opt_reuseBlock);
+  if (workspace.rendered) {
+    // Hide connections to speed up assembly.
+    topBlock.setConnectionsHidden(true);
+    // Generate list of all blocks.
+    var blocks = topBlock.getDescendants();
+    // Render each block.
+    for (var i = blocks.length - 1; i >= 0; i--) {
+      blocks[i].initSvg();
+    }
+    for (var i = blocks.length - 1; i >= 0; i--) {
+      blocks[i].render(false);
+    }
+    // Populating the connection database may be defered until after the blocks
+    // have renderend.
+    setTimeout(function() {
+      topBlock.setConnectionsHidden(false);
+    }, 1);
+    topBlock.updateDisabled();
+    // Fire an event to allow scrollbars to resize.
+    Blockly.fireUiEvent(window, 'resize');
+  }
+  return topBlock;
+};
+
+/**
+ * Decode an XML block tag and create a block (and possibly sub blocks) on the
+ * workspace.
+ * @param {!Blockly.Workspace} workspace The workspace.
+ * @param {!Element} xmlBlock XML block element.
+ * @param {boolean=} opt_reuseBlock Optional arg indicating whether to
+ *     reinitialize an existing block.
+ * @return {!Blockly.Block} The root block created.
+ * @private
+ */
+Blockly.Xml.domToBlockHeadless_ =
+    function(workspace, xmlBlock, opt_reuseBlock) {
   var block = null;
   var prototypeName = xmlBlock.getAttribute('type');
   if (!prototypeName) {
@@ -263,34 +315,9 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
   } else {
     block = Blockly.Block.obtain(workspace, prototypeName);
   }
-  if (block.initSvg) {
-    // SVG blocks are rendered, headless blocks are not.
-    block.initSvg();
-  }
-
-  var inline = xmlBlock.getAttribute('inline');
-  if (inline) {
-    block.setInputsInline(inline == 'true');
-  }
-  var disabled = xmlBlock.getAttribute('disabled');
-  if (disabled) {
-    block.setDisabled(disabled == 'true');
-  }
-  var deletable = xmlBlock.getAttribute('deletable');
-  if (deletable) {
-    block.setDeletable(deletable == 'true');
-  }
-  var movable = xmlBlock.getAttribute('movable');
-  if (movable) {
-    block.setMovable(movable == 'true');
-  }
-  var editable = xmlBlock.getAttribute('editable');
-  if (editable) {
-    block.setEditable(editable == 'true');
-  }
 
   var blockChild = null;
-  for (var x = 0, xmlChild; xmlChild = xmlBlock.childNodes[x]; x++) {
+  for (var i = 0, xmlChild; xmlChild = xmlBlock.childNodes[i]; i++) {
     if (xmlChild.nodeType == 3 && xmlChild.data.match(/^\s*$/)) {
       // Extra whitespace between tags does not concern us.
       continue;
@@ -299,8 +326,8 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
 
     // Find the first 'real' grandchild node (that isn't whitespace).
     var firstRealGrandchild = null;
-    for (var y = 0, grandchildNode; grandchildNode = xmlChild.childNodes[y];
-         y++) {
+    for (var j = 0, grandchildNode; grandchildNode = xmlChild.childNodes[j];
+         j++) {
       if (grandchildNode.nodeType != 3 || !grandchildNode.data.match(/^\s*$/)) {
         firstRealGrandchild = grandchildNode;
       }
@@ -337,6 +364,11 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
           block.comment.setBubbleSize(bubbleW, bubbleH);
         }
         break;
+      case 'data':
+        // Optional text data that round-trips beween blocks and XML.
+        // Has no effect.  May be used by 3rd parties for meta information.
+        block.data = xmlChild.textContent;
+        break;
       case 'title':
         // Titles were renamed to field in December 2013.
         // Fall through.
@@ -351,8 +383,8 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
         }
         if (firstRealGrandchild &&
             firstRealGrandchild.nodeName.toLowerCase() == 'block') {
-          blockChild = Blockly.Xml.domToBlock(workspace, firstRealGrandchild,
-              opt_reuseBlock);
+          blockChild = Blockly.Xml.domToBlockHeadless_(workspace,
+              firstRealGrandchild, opt_reuseBlock);
           if (blockChild.outputConnection) {
             input.connection.connect(blockChild.outputConnection);
           } else if (blockChild.previousConnection) {
@@ -371,8 +403,8 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
             // This could happen if there is more than one XML 'next' tag.
             throw 'Next statement is already connected.';
           }
-          blockChild = Blockly.Xml.domToBlock(workspace, firstRealGrandchild,
-              opt_reuseBlock);
+          blockChild = Blockly.Xml.domToBlockHeadless_(workspace,
+              firstRealGrandchild, opt_reuseBlock);
           if (!blockChild.previousConnection) {
             throw 'Next block does not have previous statement.';
           }
@@ -385,19 +417,29 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
     }
   }
 
+  var inline = xmlBlock.getAttribute('inline');
+  if (inline) {
+    block.setInputsInline(inline == 'true');
+  }
+  var disabled = xmlBlock.getAttribute('disabled');
+  if (disabled) {
+    block.setDisabled(disabled == 'true');
+  }
+  var deletable = xmlBlock.getAttribute('deletable');
+  if (deletable) {
+    block.setDeletable(deletable == 'true');
+  }
+  var movable = xmlBlock.getAttribute('movable');
+  if (movable) {
+    block.setMovable(movable == 'true');
+  }
+  var editable = xmlBlock.getAttribute('editable');
+  if (editable) {
+    block.setEditable(editable == 'true');
+  }
   var collapsed = xmlBlock.getAttribute('collapsed');
   if (collapsed) {
     block.setCollapsed(collapsed == 'true');
-  }
-  if (workspace.rendered) {
-    var next = block.getNextBlock();
-    if (next) {
-      // Next block in a stack needs to square off its corners.
-      // Rendering a child will render its parent.
-      next.render();
-    } else {
-      block.render();
-    }
   }
   return block;
 };
@@ -407,7 +449,7 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
  * @param {!Element} xmlBlock XML block element.
  */
 Blockly.Xml.deleteNext = function(xmlBlock) {
-  for (var x = 0, child; child = xmlBlock.childNodes[x]; x++) {
+  for (var i = 0, child; child = xmlBlock.childNodes[i]; i++) {
     if (child.nodeName.toLowerCase() == 'next') {
       xmlBlock.removeChild(child);
       break;

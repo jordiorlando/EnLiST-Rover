@@ -1,17 +1,19 @@
 #include <TinyWireS.h>
-//#include <Servo8Bit.h>
+#include <TinyServo.h>
 #include <PID_v1.h>
 
-// the default buffer size
+// The default buffer size
 #ifndef TWI_RX_BUFFER_SIZE
 #define TWI_RX_BUFFER_SIZE ( 16 )
 #endif
 
-#define MOTOR_ADDRESS	0x42 // change this to a unique address
+// Change this to a unique address for each controller
+#define MOTOR_ADDRESS	0x42
 
-#define REGSIZE 16 // size of the I2C register
+// Size of the I2C register
+#define REGSIZE 16
 
-// pin definitions
+// Pin definitions
 #define IN1		0
 #define IN2		1
 #define STALL	2
@@ -41,7 +43,7 @@
 		0: requested direction
 			0: turn forwards
 			1: turn backwards
-	nI2CReg[1]: requested wheel speed (0~255)
+	nI2CReg[1]: requested wheel speed [0, 255]
 	nI2CReg[2]:
 		7:
 		6:
@@ -53,10 +55,10 @@
 			0: no stall
 			1: stall
 		0: current direction
-			0: turn forwards
-			1: turn backwards
-	nI2CReg[3]: current wheel speed (0~255)
-	nI2CReg[4]: requested servo position (0~180)
+			0: forwards
+			1: backwards
+	nI2CReg[3]: current wheel speed [0, 255]
+	nI2CReg[4]: requested servo position [0, 180]
 	nI2CReg[5]: requested LAMP brightness
 	nI2CReg[6]: lamp mode control
 		7:
@@ -66,77 +68,80 @@
 		3:
 		2:
 		1:
-		0:
+		0: solid
 	nI2CReg[7]:
-	nI2CReg[8]: requested P
+	nI2CReg[8]:
 	nI2CReg[9]:
-	nI2CReg[10]:
+	nI2CReg[10]: PID P value
 	nI2CReg[11]:
-	nI2CReg[12]: requested I
+	nI2CReg[12]: PID I value
 	nI2CReg[13]:
-	nI2CReg[14]:
+	nI2CReg[14]: PID D value
 	nI2CReg[15]:
-	nI2CReg[16]: requested D
-	nI2CReg[17]:
-	nI2CReg[18]:
-	nI2CReg[19]:
 
 */
 volatile uint8_t nI2CReg[REGSIZE]; // I2C register
-volatile uint8_t nRegPos; // current I2C register pointer position
-volatile bool bNewStuff; // flag for new I2C data
+volatile uint8_t nRegPos; // Current I2C register pointer position
+volatile bool bNewStuff; // Flag for new I2C data
 
 bool bStandby = true;
 bool bBrakeMode = 0;
 bool bPIDMode = 0;
 
-//Servo8Bit servo; // declare servo object
+// Number of servos
+const byte SERVOS = 1;
+// Array of servos for library
+const byte servoPin[SERVOS] = {SERVO};
+// Nice alias for use with the servo library
+#define STEERING_SERVO	0
 
-double fQE, fPWM, fSpeed, Kp = 2, Ki = 0.1, Kd = 1; // all required PID variables
-PID speedPID(&fQE, &fPWM, &fSpeed, Kp, Ki, Kd, DIRECT); // declare PID loop
+// All required PID variables
+double fQE, fPWM, fSpeed, Kp = 2, Ki = 0.1, Kd = 1;
+// Declare PID loop
+PID speedPID(&fQE, &fPWM, &fSpeed, Kp, Ki, Kd, DIRECT);
 
 void setup() {
-	TinyWireS.begin(MOTOR_ADDRESS); // connect to I2C with specified address
-	TinyWireS.onReceive(receiveEvent); // register receive event
-	TinyWireS.onRequest(requestEvent); // register request event
+	TinyWireS.begin(MOTOR_ADDRESS); // Connect to I2C with specified address
+	TinyWireS.onReceive(receiveEvent); // Register receive event
+	TinyWireS.onRequest(requestEvent); // Register request event
 
-	//servo.attach(10);
+	setupServos();
 
-	// initialize PID variables
+	// Initialize PID variables
 	fQE = 0;
 	fSpeed = 0;
 
-	// turn the PID controller on
+	// Turn the PID controller on
 	speedPID.SetMode(AUTOMATIC);
 	speedPID.SetSampleTime(10);
 	speedPID.SetOutputLimits(-255, 255);
 
-	// set IO directions
+	// Set IO directions
 	pinMode(IN1, OUTPUT);
 	pinMode(IN2, OUTPUT);
 	pinMode(STALL, OUTPUT);
 	pinMode(STANDBY, OUTPUT);
 	pinMode(LAMP, OUTPUT);
 	pinMode(PWM, OUTPUT);
-	pinMode(SERVO, OUTPUT);
+	//pinMode(SERVO, OUTPUT); // DO NOT uncomment this line.
 	pinMode(QEA, INPUT);
 	pinMode(QEB, INPUT);
 
-	bNewStuff = true; // initial read
+	bNewStuff = true; // Initial read
 }
 
 void loop() {
-	TinyWireS_stop_check(); // has to run often to detect I2C stop state
+	TinyWireS_stop_check(); // Has to run often to detect I2C stop state
 
 	if (bNewStuff) {
-		// update standby
+		// Update standby
 		bStandby = nI2CReg[0] & (1 << 3);
 		digitalWrite(STANDBY, !bStandby);
 
-		// update brake mode
+		// Update brake mode
 		bBrakeMode = nI2CReg[0] & (1 << 2);
 
-		// update PID mode
+		// Update PID mode
 		bPIDMode = nI2CReg[0] & (1 << 1);
 		if (bPIDMode) {
 			speedPID.SetMode(AUTOMATIC);
@@ -144,38 +149,34 @@ void loop() {
 			speedPID.SetMode(MANUAL);
 		}
 
-		// get requested speed
+		// Get requested speed
 		if (nI2CReg[0] & 1) {
 			fSpeed = nI2CReg[1] * -1;
 		} else {
 			fSpeed =  nI2CReg[1];
 		}
 
-		// get servo position
-		// servo function with speed = nI2CReg[4];
-		//servo.write(nI2CReg[4]);
+		analogWrite(LAMP, nI2CReg[5]); // Update lamp brightness
 
-		analogWrite(LAMP, nI2CReg[5]); // update lamp brightness
-
-		bNewStuff = false; // reset I2C flag
+		bNewStuff = false; // Reset I2C flag
 	}
 
 	if (bStandby) {
 	} else {
 		if (bPIDMode) {
-			fQE = 5; // test speed reading of 5 (replace with actual QE function call)
-			speedPID.Compute(); // compute PID
+			fQE = 5; // Test speed reading of 5 (replace with actual QE function call)
+			speedPID.Compute(); // Compute PID
 		} else {
 			fPWM = fSpeed;
 		}
 
-		// update motor speed
+		// Update motor speed
 		if (fPWM == 0) {
-			// freewheel
+			// Freewheel
 			if (bBrakeMode) {
 				digitalWrite(IN1, LOW);
 				digitalWrite(IN2, LOW);
-			} else {
+			} else { // Normal
 				digitalWrite(IN1, HIGH);
 				digitalWrite(IN2, HIGH);
 				digitalWrite(PWM, LOW);
@@ -190,7 +191,7 @@ void loop() {
 			analogWrite(PWM, (uint8_t)abs(fPWM));
 		}
 
-		// save current speed to register
+		// Save current speed to register
 		if (fQE >= 0) {
 			nI2CReg[2] = 0;
 			nI2CReg[3] = (uint8_t)fQE;
@@ -198,22 +199,26 @@ void loop() {
 			nI2CReg[2] = 1;
 			nI2CReg[3] = (uint8_t)abs(fQE);
 		}
+
+		// Set servo position
+		moveServo(STEERING_SERVO, nI2CReg[4]);
 	}
 }
 
 void receiveEvent(uint8_t nNumBytes) {
-	if (!nNumBytes || nNumBytes > TWI_RX_BUFFER_SIZE) return; // sanity check
+	if (!nNumBytes || nNumBytes > TWI_RX_BUFFER_SIZE) return; // Sanity check
 
-	nRegPos = TinyWireS.receive(); // set I2C register pointer position
+	// Set I2C register pointer position
+	nRegPos = TinyWireS.receive();
 
-	// leave if this write was only to set the pointer for next read
+	// Leave if this write was only to set the pointer for next read
 	if (!--nNumBytes) return;
 
 	while (nNumBytes--) {
-		nI2CReg[nRegPos] = TinyWireS.receive();
-		nRegPos++; // increment I2C register pointer
+		nI2CReg[nRegPos] = TinyWireS.receive(); // Receive byte
+		nRegPos++; // Increment I2C register pointer
 
-		// if register position is invalid, fail silently
+		// If register position is invalid, fail silently
 		if (nRegPos == REGSIZE) {
 			while (nNumBytes--) {
 				TinyWireS.receive();
@@ -226,9 +231,9 @@ void receiveEvent(uint8_t nNumBytes) {
 }
 
 void requestEvent() {
-	TinyWireS.send(nI2CReg[nRegPos]); // send byte
+	TinyWireS.send(nI2CReg[nRegPos]); // Send byte
 
-	// increment the reg position on each read, and loop back to zero
+	// Increment the reg position on each read, and loop back to zero
 	nRegPos++;
 	if (nRegPos >= REGSIZE) {
 		nRegPos = 0;
