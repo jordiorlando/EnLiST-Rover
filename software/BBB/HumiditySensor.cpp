@@ -1,7 +1,7 @@
 #include "HumiditySensor.h"
 
-HumiditySensor::HumiditySensor(i2cManager & manager)
-: i2cDevice(manager, 0x40, 250), state(0) {}
+HumiditySensor::HumiditySensor(deviceManager & manager)
+: i2cDevice(HTU21DF_ADDRESS, manager, 250), state(0) {}
 
 /*
  * Returns the temperature in Celcius.

@@ -1,7 +1,7 @@
 #ifndef HUMIDITYSENSOR_H_
 #define HUMIDITYSENSOR_H_
 
-#include "i2cManager.h"
+#include "deviceManager.h"
 #include "i2cDevice.h"
 
 /*
@@ -9,30 +9,32 @@
  * Address 0x40
  */
 
+ #define HTU21DF_ADDRESS 0x40
+
 class HumiditySensor : public i2cDevice
 {
 
-    public:
-        HumiditySensor(i2cManager & manager);
+  public:
+    HumiditySensor(deviceManager & manager);
 
-        float getTemperature();
-        float getHumidity();
+    float getTemperature();
+    float getHumidity();
 
-    private:
-        struct sensordata
-        {
-            uint16_t temperature;
-            uint16_t humidity;
-        };
+  private:
+    struct devicedata
+    {
+        uint16_t temperature;
+        uint16_t humidity;
+    };
 
-        sensordata data;
+    devicedata data;
 
-        int state;
+    int state;
 
-        void init();
+    void init();
 
-        void _update();
-        int  _out(uint8_t * buf);
+    void _update();
+    int  _out(uint8_t * buf);
 
 
 };

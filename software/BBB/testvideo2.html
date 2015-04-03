@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="http://rawgit.com/phoboslab/jsmpeg/master/jsmpg.js"></script>
+    <script>
+        $(function() {
+        
+            var client = new WebSocket("ws://192.168.7.1:5556");
+            var player = new jsmpeg(client, {canvas:document.getElementById('videocanv')});
+        });
+    </script>
+</head>
+
+<body>
+
+    <canvas id="videocanv" width="1920" height="1080"></canvas>
+
+</body>
+
+</html>

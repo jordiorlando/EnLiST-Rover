@@ -1,7 +1,7 @@
 #ifndef LIGHTSENSOR_H_
 #define LIGHTSENSOR_H_
 
-#include "i2cManager.h"
+#include "deviceManager.h"
 #include "i2cDevice.h"
 
 /*
@@ -9,32 +9,34 @@
  * Address 0x60
  */
 
+#define SI1145_ADDRESS 0x60
+
 class LightSensor : public i2cDevice
 {
 
-    public:
-        LightSensor(i2cManager & manager);
+  public:
+    LightSensor(deviceManager & manager);
 
-        uint16_t getUV();
-        uint16_t getVisible();
-        uint16_t getIR();
+    uint16_t getUV();
+    uint16_t getVisible();
+    uint16_t getIR();
 
-    private:
-        struct sensordata
-        {
-            uint16_t uv;
-            uint16_t visible;
-            uint16_t ir;
-        };
+  private:
+    struct devicedata
+    {
+        uint16_t uv;
+        uint16_t visible;
+        uint16_t ir;
+    };
 
-        sensordata data;
+    devicedata data;
 
-        void init();
+    void init();
 
 
 
-        void _update();
-        int  _out(uint8_t * buf);
+    void _update();
+    int  _out(uint8_t * buf);
 
 
 };

@@ -1,6 +1,9 @@
 #ifndef I2CDEVICE_H_
 #define I2CDEVICE_H_
 
+#include "deviceManager.h"
+#include "device.h"
+
 //scl - serial clock
 //sda - serial data
 
@@ -8,19 +11,28 @@
 //I2C2_SCL - pin 19
 //I2C2_SDA - pin 20
 
-//forward declaration of i2cManager
-class i2cManager;
+//forward declaration of deviceManager
+class deviceManager;
 
-class i2cDevice
+/*
+ * i2cDevice - type of device that uses the i2c bus to communicate.
+ * Adds additional i2c communication functions.
+ * Must implement the usual abstract device functions.
+ */
+
+class i2cDevice : public device
 {
 
     public:
-        i2cDevice(i2cManager & manager, int address, int updateRate = 1000);
-        ~i2cDevice();
+        i2cDevice(int address, deviceManager & manager, int updateRate = 1000);
 
+        //debatable: move these to protected?
+
+        //i2c functions
         ssize_t i2cRead(uint8_t * data, size_t length);
         ssize_t i2cWrite(uint8_t * data, size_t length);
 
+        //smbus functions
         int smbWrite(uint8_t value);
         int smbRead();
         int smbWriteByte(uint8_t reg, uint8_t value);
@@ -30,31 +42,22 @@ class i2cDevice
         int smbWriteBlock(uint8_t reg, uint8_t * data, size_t length);
         int smbReadBlock(uint8_t reg, uint8_t * data);
 
-        bool isConnected();
         int getAddress();
-        bool dataReady();
-
-        int dataOut(uint8_t * buf);
 
     protected:
-        bool connected;
-        int updateRate;
+        //implemented for each i2cDevice (from device):
+        //  called when a device's i/o should be updated
+        virtual void _update();
+        //  called when a device's status/data should be placed in buf
+        virtual int _out(uint8_t * buf);
 
     private:
-        i2cManager * deviceManager;
 
         //int deviceBus; //currently unused, assumed to be 1
-        int deviceAddress;
+        int i2c_address;
         int i2c_fd;
 
         void setAddress();
-
-        time_t lastUpdate;
-        void updateData();
-
-        virtual void _update();
-        virtual int _out(uint8_t * buf);
-
 };
 
 

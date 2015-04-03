@@ -63,27 +63,14 @@ void tcpSocket::closeSocket()
  */
 void tcpSocket::connectToHost(char * host)
 {
-    struct sockaddr_in serv_addr;
-    struct hostent * server;
+    struct addrinfo * addr;
 
     //look up host
-    server = gethostbyname(host);
-    if (server == NULL) {
-        std::cout << "gethostbyname(): host not found" << std::endl;
-        return;
-    }
-
-    //set connect address
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    memcpy((char *)server->h_addr,
-           (char *)&serv_addr.sin_addr.s_addr,
-           server->h_length);
-    serv_addr.sin_port = htons(port);
+    getaddrinfo(host, std::to_string(port).c_str(), 0, &addr);
 
     //connect
-    if (connect(hostfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-        std::cout << "connect() " << std::endl; //connect() error
+    if (connect(hostfd, addr->ai_addr, (int)addr->ai_addrlen) < 0)
+        std::cout << "connect() " << errno << std::endl; //connect() error
 }
 
 /*

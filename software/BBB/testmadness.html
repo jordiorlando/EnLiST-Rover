@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script>
+        var sourceBuffer, mediaSource, ws, video;
+        var queue = [];
+        var file;
+        $(function()
+        {
+
+
+            video = document.querySelector('video');
+
+            window.MediaSource = window.MediaSource || window.WebKitMediaSource;
+            if (!!!window.MediaSource) {
+              console.log('MediaSource API is not available');
+            }
+
+            mediaSource = new MediaSource();
+
+            video.src = window.URL.createObjectURL(mediaSource);
+
+            ws = new WebSocket("ws://localhost:5556");
+            ws.binaryType = "arraybuffer";
+
+            ws.onopen = function() {
+                console.log("connected");
+            }
+
+            ws.onclose = function() {
+                console.log("disconnected");
+            }
+
+            //video/mp4');
+
+            ws.onmessage = function(evt)
+            {
+                var msgdata = new Uint8Array(evt.data);
+
+                //if (msgdata[0] == 0x1) //video
+                //{
+                    if (sourceBuffer.updating || mediaSource.readyState != "open" || queue.length > 0)
+                    {
+                        queue.push(evt.data); //.subarray(1));
+                    }
+                    else
+                    {
+                        sourceBuffer.appendBuffer(evt.data); //.subarray(1));
+                    }
+                //}
+
+            }
+
+            mediaSource.addEventListener('sourceopen', function (e) {
+                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+                console.log("added");
+
+                sourceBuffer.addEventListener('update', function()
+                {
+                    if (queue.length > 0 && !sourceBuffer.updating)
+                    {
+                      sourceBuffer.appendBuffer(queue.shift());
+                    }
+                });
+
+            }, false);
+
+            //mediaSource.addEventListener('sourceopen', callback, false);
+            //mediaSource.addEventListener('webkitsourceopen', callback, false);
+        });
+
+        function readit()
+        {
+
+            (function readChunk_(i) {
+              var reader = new FileReader();
+
+              reader.onload = function(e) {
+                sourceBuffer.appendBuffer(new Uint8Array(e.target.result));
+
+                if (video.paused) {
+                  video.play(); // Start playing after 1st chunk is appended.
+                }
+              };
+
+              reader.readAsArrayBuffer(file);
+          })(0);  // Start the recursive call by self calling.
+        }
+
+    </script>
+</head>
+
+<body>
+
+
+    <video autoplay controls width="640" height="480"></video>
+
+</body>
+
+</html>

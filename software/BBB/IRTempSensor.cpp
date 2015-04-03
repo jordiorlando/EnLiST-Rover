@@ -1,7 +1,7 @@
 #include "IRTempSensor.h"
 
-IRTempSensor::IRTempSensor(i2cManager & manager)
- : i2cDevice(manager, 0x5a, 1000) {}
+IRTempSensor::IRTempSensor(deviceManager & manager)
+ : i2cDevice(MLX90614_ADDRESS, manager, 1000) {}
 
 /*
  * Returns the ambient temperature from in Celcius.

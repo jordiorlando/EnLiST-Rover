@@ -1,7 +1,7 @@
 #include "PressureSensor.h"
 
-PressureSensor::PressureSensor(i2cManager & manager)
- : i2cDevice(manager, 0x77), state(0) {}
+PressureSensor::PressureSensor(deviceManager & manager)
+ : i2cDevice(BMP085_ADDRESS, manager, 1000), state(0) {}
 
 /*
  * Returns the temperature from in Celcius.

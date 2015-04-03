@@ -1,5 +1,5 @@
 SERVER_OBJS = server.o tcpSocket.o commSocket.o videoSocket.o streamSocket.o dataHandler.o
-CLIENT_OBJS = client.o tcpSocket.o controllerInput.o i2cDevice.o i2cManager.o IRTempSensor.o MotorController.o AmbientTempSensor.o RGBColorSensor.o
+CLIENT_OBJS = client.o tcpSocket.o controllerInput.o device.o i2cDevice.o deviceManager.o OxygenSensor.o IRTempSensor.o WheelController.o AmbientTempSensor.o RGBColorSensor.o
 #HumiditySensor.o
 #PressureSensor.o
 #LightSensor.o
@@ -56,32 +56,42 @@ dataHandler.o: dataHandler.cpp
 controllerInput.o: controllerInput.cpp
 	$(CXX) $(CXXFLAGS) controllerInput.cpp
 
-i2cDevice.o: i2cDevice.cpp
+#device manager
+
+deviceManager.o: deviceManager.cpp deviceManager.h
+	$(CXX) $(CXXFLAGS) deviceManager.cpp
+
+device.o: device.cpp device.h
+	$(CXX) $(CXXFLAGS) device.cpp
+
+i2cDevice.o: i2cDevice.cpp i2cDevice.h
 	$(CXX) $(CXXFLAGS) i2cDevice.cpp
 
-i2cManager.o: i2cManager.cpp i2cManager.h
-	$(CXX) $(CXXFLAGS) i2cManager.cpp
+#devices
 
 IRTempSensor.o : IRTempSensor.cpp IRTempSensor.h
 	$(CXX) $(CXXFLAGS) IRTempSensor.cpp
 
-MotorController.o : MotorController.cpp MotorController.h
-	$(CXX) $(CXXFLAGS) MotorController.cpp
+WheelController.o : WheelController.cpp WheelController.h
+	$(CXX) $(CXXFLAGS) WheelController.cpp
 
 AmbientTempSensor.o : AmbientTempSensor.cpp
 	$(CXX) $(CXXFLAGS) AmbientTempSensor.cpp
 
-#HumiditySensor.o : HumiditySensor.cpp
-#	$(CXX) $(CXXFLAGS) HumiditySensor.cpp
+HumiditySensor.o : HumiditySensor.cpp
+	$(CXX) $(CXXFLAGS) HumiditySensor.cpp
 
-#LightSensor.o : LightSensor.cpp
-#	$(CXX) $(CXXFLAGS) LightSensor.cpp
+LightSensor.o : LightSensor.cpp
+	$(CXX) $(CXXFLAGS) LightSensor.cpp
 
 RGBColorSensor.o : RGBColorSensor.cpp
 	$(CXX) $(CXXFLAGS) RGBColorSensor.cpp
 
-#PressureSensor.o : PressureSensor.cpp
-#	$(CXX) $(CXXFLAGS) PressureSensor.cpp
+PressureSensor.o : PressureSensor.cpp
+	$(CXX) $(CXXFLAGS) PressureSensor.cpp
+
+OxygenSensor.o : OxygenSensor.cpp
+	$(CXX) $(CXXFLAGS) OxygenSensor.cpp
 
 clean:
 	-rm -rf *.o server client

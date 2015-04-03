@@ -1,7 +1,7 @@
 #include "LightSensor.h"
 
-LightSensor::LightSensor(i2cManager & manager)
- : i2cDevice(manager, 0x60, 500), state(0) {}
+LightSensor::LightSensor(deviceManager & manager)
+ : i2cDevice(SI1145_ADDRESS, manager, 500), state(0) {}
 
 /*
  * Returns the UV index.

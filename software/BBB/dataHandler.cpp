@@ -24,7 +24,11 @@ void dataHandler::handleClientData()
     if (!client->connected) return;
 
     //don't wait
-    poll(&pfd, 1, 0);
+    if (poll(&pfd, 1, 0) == POLLNVAL)
+    {
+      client->connected = false;
+      return;
+    }
 
     //data ready
     if (pfd.revents & POLLIN)

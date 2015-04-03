@@ -4,6 +4,8 @@ controllerInput::controllerInput(tcpSocket & server)
 {
     this->server = &server;
 
+    memset(&data, 0, sizeof(data));
+
     pfd.fd      = this->server->hostfd;
     pfd.events  = POLLIN;
     pfd.revents = 0;
@@ -19,10 +21,9 @@ void controllerInput::updateValues()
     {
         ssize_t len;
         unsigned char buf[6];
-        len = recv(pfd.fd, buf, 6, 0);
 
-        std::cout << "got data " << len << " " << (unsigned int)buf[0] << " " << (unsigned int)buf[1] << " " <<
-                                                  (unsigned int)buf[2] << " " << (unsigned int)buf[3] << std::endl;
+        //chew up any stale controller data
+        while ((len = recv(pfd.fd, buf, 6, MSG_DONTWAIT)) > 0);
 
         data.square   = (buf[0] >> 0) & 0x1;
         data.cross    = (buf[0] >> 1) & 0x1;
@@ -42,10 +43,10 @@ void controllerInput::updateValues()
         data.d_left      = (buf[1] >> 6) & 0x1;
         data.d_right     = (buf[1] >> 7) & 0x1;
 
-        data.left_x  = buf[2] - 0x80 + (1 * (buf[2] < 0x80));
-        data.left_y  = buf[3] - 0x80 + (1 * (buf[3] < 0x80));
-        data.right_x = buf[4] - 0x80 + (1 * (buf[4] < 0x80));
-        data.right_y = buf[5] - 0x80 + (1 * (buf[5] < 0x80));
+        data.left_x  = (float)( buf[2] - 0x80 + (1 * (buf[2] < 0x80)) ) / 0x80;
+        data.left_y  = (float)( buf[3] - 0x80 + (1 * (buf[3] < 0x80)) ) / 0x80;
+        data.right_x = (float)( buf[4] - 0x80 + (1 * (buf[4] < 0x80)) ) / 0x80;
+        data.right_y = (float)( buf[5] - 0x80 + (1 * (buf[5] < 0x80)) ) / 0x80;
 
     }
 }

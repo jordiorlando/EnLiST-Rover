@@ -1,7 +1,7 @@
 #ifndef RGBCOLORSENSOR_H_
 #define RGBCOLORSENSOR_H_
 
-#include "i2cManager.h"
+#include "deviceManager.h"
 #include "i2cDevice.h"
 
 /*
@@ -9,14 +9,16 @@
  * Address 0x29
  */
 
+#define TCS34725_ADDRESS 0x29
+
 class RGBColorSensor : public i2cDevice
 {
 
     public:
-        RGBColorSensor(i2cManager & manager);
+        RGBColorSensor(deviceManager & manager);
 
     private:
-        struct sensordata
+        struct devicedata
         {
             uint16_t r;
             uint16_t g;
@@ -24,7 +26,7 @@ class RGBColorSensor : public i2cDevice
             uint16_t c;
         };
 
-        sensordata data;
+        devicedata data;
 
         int state;
 
