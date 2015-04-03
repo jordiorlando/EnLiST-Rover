@@ -1,7 +1,7 @@
 #include "AmbientTempSensor.h"
 
-AmbientTempSensor::AmbientTempSensor(i2cManager & manager)
- : i2cDevice(manager, 0x18, 500) {}
+AmbientTempSensor::AmbientTempSensor(deviceManager & manager)
+ : i2cDevice(MCP9808_ADDRESS, manager, 500) {}
 
 /*
  * Returns the ambient temperature in Celcius.

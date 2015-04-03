@@ -1,7 +1,7 @@
 #ifndef AMBIENTTEMPSENSOR_H_
 #define AMBIENTTEMPSENSOR_H_
 
-#include "i2cManager.h"
+#include "deviceManager.h"
 #include "i2cDevice.h"
 
 /*
@@ -9,26 +9,28 @@
  * Address 0x18 + A2 A1 A0
  */
 
+#define MCP9808_ADDRESS 0x18
+
 class AmbientTempSensor : public i2cDevice
 {
 
-    public:
-        AmbientTempSensor(i2cManager & manager);
+  public:
+    AmbientTempSensor(deviceManager & manager);
 
-        float getAmbientTemp();
+    float getAmbientTemp();
 
-        static float CtoF(float C);
+    static float CtoF(float C);
 
-    private:
-        struct sensordata
-        {
-            uint16_t temperature;
-        };
+  private:
+    struct devicedata
+    {
+        uint16_t temperature;
+    };
 
-        sensordata data;
+    devicedata data;
 
-        void _update();
-        int  _out(uint8_t * buf);
+    void _update();
+    int  _out(uint8_t * buf);
 
 };
 

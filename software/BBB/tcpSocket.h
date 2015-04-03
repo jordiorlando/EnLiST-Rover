@@ -11,6 +11,7 @@
 
 //socket functions
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 #include <sys/types.h>
 #include <unistd.h>     //close
 

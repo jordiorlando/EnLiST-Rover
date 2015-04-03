@@ -1,25 +1,17 @@
-#include "i2cManager.h"
 #include "i2cDevice.h"
 
-i2cDevice::i2cDevice(i2cManager & manager, int address, int updateRate)
+i2cDevice::i2cDevice(int address, deviceManager & manager, int updateRate) :
+device(manager, address, updateRate)
 {
-    this->updateRate = updateRate;
-    deviceAddress = address;
+    i2c_address = address;
     //TODO: check that the address is valid (or else)
 
-    deviceManager = &manager;
-
-    i2c_fd = deviceManager->initDevice(*this);
-}
-
-i2cDevice::~i2cDevice()
-{
-    deviceManager->removeDevice(*this);
+    i2c_fd = manager.geti2cBus();
 }
 
 int i2cDevice::getAddress()
 {
-    return deviceAddress;
+    return i2c_address;
 }
 
 int i2cDevice::smbWrite(uint8_t value)
@@ -141,64 +133,19 @@ ssize_t i2cDevice::i2cRead(uint8_t * data, size_t length)
 
 void i2cDevice::setAddress()
 {
-    if (ioctl(i2c_fd, I2C_SLAVE, deviceAddress) < 0)
+    if (ioctl(i2c_fd, I2C_SLAVE, i2c_address) < 0)
     {
         //ioctl() error
         std::cout << "ioctl" << std::endl;
     }
 }
 
-/*
- * Returns if the device is actually connected.
- */
-bool i2cDevice::isConnected()
-{
-    return connected;
-}
 
-/*
- * Returns if there is new data to send.
- */
-bool i2cDevice::dataReady()
-{
-    time_t t = time(0);   // get time now
-    return (difftime(t, lastUpdate) * 1000 >= updateRate);
-}
-
-/*
- * Updates internal device data and status.
- */
-void i2cDevice::updateData()
-{
-    lastUpdate = time(0);
-    _update();
-}
-
-/*
- * This should be implemented by all derived classes to update
- * device data and connectivity status. The following is implemented
- * to allow for the use of a generic i2c object.
- */
 void i2cDevice::_update()
 {
     connected = (smbRead() >= 0);
 }
 
-/*
- * Writes a buffer with the status to send and returns the length
- * of the data written.
- */
-int i2cDevice::dataOut(uint8_t * buf)
-{
-    updateData();
-    return _out(buf);
-}
-
-/*
- * This should be implemented by all derived classes to output
- * the data to be sent to the server. The function should return
- * the length of the data written to the buffer.
- */
 int i2cDevice::_out(uint8_t * buf)
 {
     return 0;

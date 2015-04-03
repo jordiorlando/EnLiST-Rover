@@ -45,6 +45,8 @@ int main()
     //create data i/o handler class
     dataHandler dh(client, ss);
 
+    //rtmp 1935
+
     //main loop
     while(running)
     {

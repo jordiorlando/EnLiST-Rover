@@ -1,7 +1,7 @@
 #include "RGBColorSensor.h"
 
-RGBColorSensor::RGBColorSensor(i2cManager & manager)
- : i2cDevice(manager, 0x29, 500), state(0) {}
+RGBColorSensor::RGBColorSensor(deviceManager & manager)
+ : i2cDevice(TCS34725_ADDRESS, manager, 500), state(0) {}
 
 
 void RGBColorSensor::init()

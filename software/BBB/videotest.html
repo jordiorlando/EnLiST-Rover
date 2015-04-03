@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<script src="jwplayer/jwplayer.js"></script>
+
+<script type="text/javascript" src="smp/lib/jquery/jquery-1.5.1.min.js">
+</script>
+<script type="text/javascript" src="smp/jquery.strobemediaplayback.js">
+</script>
+<script type="text/javascript" src="smp/lib/swfobject.js"></script>
+
+</head>
+
+<body>
+
+<!--
+<embed type="application/x-vlc-plugin" name="video1" autoplay="yes" loop="yes"
+target="rtmp://localhost:1935/live/teststream" height="720" width="1280">
+
+</embed>
+-->
+
+<div id="teststream">loading</div>
+
+<!--
+<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=10,0,0,0"
+width="470" height="320">
+      <param         name="movie"
+            value="http://localhost/smp/StrobeMediaPlayback.swf"></param>
+      <param         name="FlashVars"
+            value="src=rtmp://localhost:1935/live/teststream"></param>
+    <param         name="allowFullScreen" value="true"></param>
+    <param         name="allowscriptaccess" value="always"></param>
+
+    <embed src="http://localhost/smp/StrobeMediaPlayback.swf"
+        type="application/x-shockwave-flash"
+        allowscriptaccess="always" allowfullscreen="true"
+        width="470" height="320"
+        FlashVars="src=rtmp://localhost:1935/live/teststream">
+    </embed>
+</object>
+-->
+
+<script>
+
+    /*
+    playlist: [{
+      sources: [{
+        file: "rtmp://localhost:1935/flvplayback/flv:teststream.flv"
+      }]
+    }],
+    */
+
+  jwplayer("teststream").setup({
+
+    file:"rtmp://localhost/flvplayback/flv:teststream.flv",
+    rtmp: {
+        bufferlength: 0.1
+    },
+    height: 1080,
+    width:  1920,
+    primary: "flash",
+    deliveryType: "streaming"
+  });
+
+</script>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 #ifndef PRESSURESENSOR_H_
 #define PRESSURESENSOR_H_
 
-#include "i2cManager.h"
+#include "deviceManager.h"
 #include "i2cDevice.h"
 
 /*
@@ -9,23 +9,25 @@
  * Address 0x77
  */
 
+#define BMP085_ADDRESS 0x77
+
 class PressureSensor : public i2cDevice
 {
 
     public:
-        PressureSensor(i2cManager & manager);
+        PressureSensor(deviceManager & manager);
 
         float getTemperature();
         float getPressure();
 
     private:
-        struct sensordata
+        struct devicedata
         {
             uint32_t temperature;
             uint32_t pressure;
         };
 
-        sensordata data;
+        devicedata data;
 
         struct caldata
         {

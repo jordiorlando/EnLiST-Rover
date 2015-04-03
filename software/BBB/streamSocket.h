@@ -26,7 +26,7 @@ class streamSocket : public tcpSocket
         void closeSocket(int socketfd);
 
         void sendToAll(unsigned char * data, size_t length);
-        static void sendData(int socketfd, unsigned char * data, size_t length, uint8_t opcode = 0x02);
+        static void sendData(int socketfd, unsigned char * data, size_t length);
         static std::vector<unsigned char> recvData(int socketfd, unsigned char & opcode);
 
     static char * parseHTTPRequest(char * request, std::string & method, std::string & path,

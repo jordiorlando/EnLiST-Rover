@@ -19,10 +19,15 @@ class controllerInput
 
         struct controllerData
         {
-            int8_t left_x;
-            int8_t left_y;
-            int8_t right_x;
-            int8_t right_y;
+            float left_x;
+            float left_y;
+            float right_x;
+            float right_y;
+
+            // int8_t left_x;
+            // int8_t left_y;
+            // int8_t right_x;
+            // int8_t right_y;
 
             bool square;
             bool cross;
