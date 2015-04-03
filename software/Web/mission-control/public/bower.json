@@ -1,0 +1,26 @@
+{
+  "name": "STELLArS Mission Control",
+  "version": "0.0.0",
+  "homepage": "https://github.com/JordiOrlando/EnLiST-Rover",
+  "authors": [
+    "Jordi Orlando <jordi.orlando@gmail.com>",
+    "Ryan Conrad <ryanconrad00@outlook.com>"
+  ],
+  "main": "index.html",
+  "license": "MPL",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "polymer/polymer",
+    "paper-elements": "polymer/paper-elements",
+    "core-elements": "polymer/core-elements",
+    "blockly": "google/blockly",
+    "Chart.js": "nnnick/Chart.js"
+  }
+}

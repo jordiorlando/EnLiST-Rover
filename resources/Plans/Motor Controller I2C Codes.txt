@@ -1,8 +1,0 @@
-Standby         - 0x00
-Freewheel       - 0x01
-Brake           - 0x02
-Turn Forwards   - 0x03
-Turn Backwards  - 0x04
-Set Servo       - 0x05
-Turn Off Lamp   - 0x06
-Turn On Lamp    - 0x07

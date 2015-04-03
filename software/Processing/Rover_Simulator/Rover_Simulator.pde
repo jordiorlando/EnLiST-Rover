@@ -1,3 +1,5 @@
+import processing.serial.*; // Only necessary for Arduino serial
+
 import org.gamecontrolplus.gui.*;
 import org.gamecontrolplus.*;
 import net.java.games.input.*;
@@ -8,19 +10,15 @@ ControlDevice gpad;
 
 PFont f;  // Declare a font variable for on-screen text
 
-// Constant declarations
-int nMaxSpeed = 255;
-float fRadiusFactor = 500;
-float fWheelWidth = 20;
-float fWheelHeight = 40;
-
-// Whether or not the console is in focus
-boolean bConsoleFocus = false;
-// String to store the console input
+// String to store the keyboard input
 String sInputString = "";
 
 // Stick inputs, all of the range [-1, 1]
 float X1Stick, Y1Stick, X2Stick, Y2Stick;
+
+// Constant declarations
+int nMaxSpeed = 255;
+float fRadiusMultiplier = 500, fRadiusMultiplierTemp = 500;
 // Global variables for defining the rover's motion
 float fRoverRadius = 0, fRoverVelocity, fRoverRotation;
 // Drive mode 0 is akin to a car, while 1 is only for rotating in place
@@ -29,16 +27,30 @@ boolean bDriveMode = false;
 boolean bMastMode = false;
 // Angle of the mast
 float fMastPan = 0;
-// Toggles for drawing the rover's turn radius and velocity
-RadioButton drawRoverRadius = new RadioButton(15, 30, 5);
-RadioButton drawRoverVelocity = new RadioButton(15, 50, 5);
-RadioButton drawRoverRotation = new RadioButton(15, 30, 5);
 
-// Wheel array
-Wheel[] wheels = new Wheel[6];
+// Toggle for drawing the wheel indicators
+RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
+// Toggles for drawing the rover's turn radius and velocity
+RadioButton drawRoverRadius = new RadioButton(15, 50, 5);
+RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
+RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
+
+// Text field for the radius multiplier
+TextField radiusMultiplier = new TextField();
+
+// The actual rover object. Includes body, wheels, and mast.
+Rover rover = new Rover(250, 500);
+
+// Declare a serial port for the Arduino
+Serial arduinoPort;
 
 public void setup() {
-	size(1280, 720);
+	// Set display size to the size of the computer's screen, but makes it
+	// resizable as well.
+	size(displayWidth, displayHeight);
+	if (frame != null) {
+		frame.setResizable(true);
+	}
 
 	// Define the font and use it
 	f = createFont("Source Code Pro", 16, true);
@@ -63,17 +75,18 @@ public void setup() {
 	gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
 
 	// Initialize radio buttons
+	drawWheelIndicators.set(true);
 	drawRoverRadius.set(true);
 	drawRoverVelocity.set(true);
 	drawRoverRotation.set(true);
 
-	// Wheel declarations
-	wheels[0] = new Wheel(true, -150, 200);
-	wheels[1] = new Wheel(true, 150, 200);
-	wheels[2] = new Wheel(false, -150, 0);
-	wheels[3] = new Wheel(false, 150, 0);
-	wheels[4] = new Wheel(true, -150, -200);
-	wheels[5] = new Wheel(true, 150, -200);
+	// Initialize the radius multiplier text field
+	radiusMultiplier.set(false);
+
+	// Initialize serial port
+	//println(Serial.list()[9]);
+	String sPortName = Serial.list()[9];
+	arduinoPort = new Serial(this, sPortName, 115200);
 }
 
 public void draw() {
@@ -88,8 +101,8 @@ public void draw() {
 	Y2Stick = gpad.getSlider("Y2").getValue();
 
 	// Use mouse position instead of a gamepad
-	/*X1Stick = (float(mouseX) - 640) / 640;
-	Y1Stick = (360 - float(mouseY)) / 360;*/
+	/*X1Stick = (float(mouseX) * 2 / width) - 1;
+	Y1Stick = 1 - (float(mouseY) * 2 / height);*/
 
 	// Different rules for each mode
 	if (bDriveMode) {
@@ -105,101 +118,56 @@ public void draw() {
 		} else if (X1Stick == 1) {
 			fRoverRadius = -Float.MIN_NORMAL;
 		} else {
-			fRoverRadius = fRadiusFactor * tan(HALF_PI*(X1Stick + 1));
+			fRoverRadius = fRadiusMultiplier * tan(HALF_PI*(X1Stick + 1));
 		}
-		fRoverVelocity = nMaxSpeed * Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
+		fRoverVelocity = Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
 	}
 
-	// Update all wheels
-	for (Wheel wheel : wheels) {
-		wheel.update();
-	}
+	// Draw the rover
+	rover.draw();
 
-	// Center the matrix (from now on, the origin is at (640, 360))
-	pushMatrix();
-	translate(width / 2, height / 2);
+	// Draw the HUD
+	drawHUD();
 
-	for (Wheel wheel : wheels) {
-		if (wheel.bDrawRadius) {
-			wheel.drawRadius();
-		}
-	}
-
-	if (bDriveMode) {
-		drawBody();
-		drawMast();
-		if (drawRoverRotation.pressed()) {
-			drawRotation();
-		}
-	} else {
-		if (drawRoverRadius.pressed()) {
-			drawRadius();
-		}
-		drawBody();
-		drawMast();
-		if (drawRoverVelocity.pressed()) {
-			drawVelocity();
-		}
-	}
-
-	// Draw all wheels
-	for (Wheel wheel : wheels) {
-		wheel.draw();
-	}
-
-	popMatrix();
-
-	// Display important information
-	fill(48, 48, 48);
-	if (bDriveMode) {
-		text("Drive Mode: 1", 10, 10);
-		drawRoverRotation.draw("Rotation: " + fRoverRotation);
-	} else {
-		text("Drive Mode: 0", 10, 10);
-		drawRoverRadius.draw("Radius: " + fRoverRadius);
-		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
-		text("Radius Factor: " + fRadiusFactor, 10, height - 35);
-	}
-	fill(48, 48, 48);
-	strokeWeight(2);
-	float fRightTextWidth = textWidth("Mast Pan: -360" + (char)0x00B0) + 10;
-	if (bMastMode) {
-		text("Mast Mode: 1", width - fRightTextWidth, 10);
-	} else {
-		text("Mast Mode: 0", width - fRightTextWidth, 10);
-	}
-	text("Mast Pan: " + String.format("%.0f", fMastPan * 360) + (char)0x00B0, width - fRightTextWidth, 30);
-
-	// Draw console
-	drawConsole();
+	// Write wheel0's servo position to the Arduino
+	arduinoPort.write('v' + String.format("%.0f", rover.wheels[0].wheelVelocity()));
+	arduinoPort.write('s' + String.format("%.0f", degrees(rover.wheels[0].servoAngle()) + 10));
 }
 
 // Automatically called whenever a mouse button is pressed.
 void mousePressed() {
 	if (mouseButton == LEFT) {
-		// Check if the mouse is inside the console and set the appropriate flag
-		if (mouseY > height - 20) {
-			bConsoleFocus = true;
-		} else {
-			bConsoleFocus = false;
-		}
-
 		if (bDriveMode) {
 			if (drawRoverRotation.over()) {
 				drawRoverRotation.toggle();
 			}
 		} else {
+			float fRadiusWidth = textWidth("Radius Multiplier: ") + 10;
+
 			if (drawRoverRadius.over()) {
 				drawRoverRadius.toggle();
 			} else if (drawRoverVelocity.over()) {
 				drawRoverVelocity.toggle();
 			}
+
+			if (radiusMultiplier.over()) {
+				radiusMultiplier.set(true);
+			} else {
+				fRadiusMultiplierTemp = fRadiusMultiplier;
+				radiusMultiplier.set(false);
+			}
 		}
 
-		// Check if the mouse is over any of the wheels
-		for (Wheel wheel : wheels) {
-			if (wheel.over()) {
-				wheel.bDrawRadius = !wheel.bDrawRadius;
+		if (drawWheelIndicators.over()) {
+			drawWheelIndicators.toggle();
+		} else if (rover.over()) {
+			changeDriveMode();
+		} else {
+			// Check if the mouse is over any of the wheels
+			for (Rover.Wheel wheel : rover.wheels) {
+				if (wheel.over()) {
+					wheel.toggle();
+				}
 			}
 		}
 	}
@@ -207,21 +175,27 @@ void mousePressed() {
 
 // Automatically called whenever a key is pressed on the keyboard.
 void keyPressed() {
-	// Only do stuff if the console is in focus
-	if (bConsoleFocus) {
+	if (radiusMultiplier.pressed()) {
 		if (key == '\n' ) {
-			// TODO: add cases for other operations/commands
-			fRadiusFactor = Float.parseFloat(sInputString);
-
+			fRadiusMultiplier = fRadiusMultiplierTemp;
 			sInputString = "";
 		} else if (key == 8) {
 			// If the backspace key is pressed, delete the last character in the
 			// input string.
-			sInputString = sInputString.substring(0, sInputString.length() - 1);
+			if (sInputString.length() > 1) {
+				sInputString = sInputString.substring(0, sInputString.length() - 1);
+				fRadiusMultiplierTemp = Float.parseFloat(sInputString);
+			} else if (sInputString.length() == 1) {
+				sInputString = "";
+				fRadiusMultiplierTemp = fRadiusMultiplier;
+			}
 		} else {
 			// Otherwise, concatenate the String. Each character typed by the
 			// user is added to the end of the input String.
-			sInputString = sInputString + key;
+			if (key > 47 && key < 58) {
+				sInputString = sInputString + key;
+				fRadiusMultiplierTemp = Float.parseFloat(sInputString);
+			}
 		}
 	}
 }
@@ -238,124 +212,44 @@ void changeMastMode() {
 	bMastMode = !bMastMode;
 }
 
-// Draws the console at the bottom of the screen.
-void drawConsole() {
-	// Change the cursor on hover
-	if (mouseY > height - 20) {
-		cursor(TEXT);
-	} else {
-		cursor(ARROW);
-	}
-
-	// Draw console box
-	fill(48, 48, 48, 255);
-	noStroke();
-	rectMode(CORNERS);
-	rect(0, height - 20, width, height);
-
-	// Highlight the console text if it's in focus
-	if (bConsoleFocus) {
-		fill(255, 255, 255);
-	} else {
-		fill(255, 255, 255, 64);
-	}
-	// Draw console text
-	text(">> " + sInputString, 2, height - 12);
-}
-
-// Draws a circle that represents the path that the center of the rover will
-// take.
-void drawRadius() {
-	noFill();
-	stroke(0, 0, 0, 200);
-	ellipseMode(RADIUS);
-	point(0, 0);
-
-	if (X1Stick == 0) {
-		// If we're going straight, just draw a line
-		line(0, -height / 2, 0, height / 2);
-	} else {
-		// If not, draw a circle, and a point at the center of that circle
-		point(-fRoverRadius, 0);
-		ellipse(-fRoverRadius, 0, abs(fRoverRadius), abs(fRoverRadius));
-	}
-}
-
-// Draws a vector that represents the translational velocity of the center of
-// the rover.
-void drawVelocity() {
-	// Don't draw anything if the rover isn't moving
-	if (fRoverVelocity != 0) {
-		stroke(0, 0, 0, 255);
-		line(0, 0, 0, -fRoverVelocity / 2);
-		line(-10, -fRoverVelocity / 2, 10, -fRoverVelocity / 2);
-	}
-}
-
-// Draws a nice curvy vector-thing that represents the rover's rotation about
-// its center.
-void drawRotation() {
-	noFill();
-	stroke(0, 0, 0, 255);
-	ellipseMode(RADIUS);
-
-	// Only necessary because Processing does not allow negative angles in arcs
-	if (fRoverRotation < 0) {
-		arc(0, 0, 50, 50, 0, -fRoverRotation * TWO_PI);
-	} else {
-		arc(0, 0, 50, 50, TWO_PI - fRoverRotation * TWO_PI, TWO_PI);
-	}
-
-	// Only draw the tip of the arrow if the rover is actually turning
-	if (fRoverRotation != 0) {
-		point(0, 0);
-		pushMatrix();
-		rotate(-fRoverRotation * TWO_PI);
-		line(45, 0, 55, 0);
-		popMatrix();
-	}
-}
-
-// Draws the body of the rover. Just a stationary, semi-translucent rectangle.
-void drawBody() {
-	fill(255, 255, 255, 127);
-	stroke(0, 0, 0, 127);
-	rectMode(RADIUS);
-	rect(0, 0, 100, 200, 5);
-}
-
-// Draws the camera mast on the front of the rover
-void drawMast() {
-	pushMatrix();
-	translate(0, -175);
-	if (bMastMode) {
-		float fNew = X2Stick / 100;
-		if (abs(fMastPan + fNew) <= 1) {
-			fMastPan += fNew;
-		}
-	} else {
-		fMastPan = X2Stick;
-	}
-	rotate(PI * fMastPan);
-
-	fill(48, 48, 48, 255);
-	noStroke();
-	rectMode(RADIUS);
-	rect(0, 0, 50, 15, 10);
-	rect(0, 10, 25, 10, 10);
-
-	popMatrix();
-}
-
 // Returns the value of the maximum distance of any wheel from its center to the
 // center of rotation of the rover.
 float maxRadius(float fRadius) {
 	float fMaxRadius = 0;
-	for (Wheel wheel : wheels) {
+	for (Rover.Wheel wheel : rover.wheels) {
 		if (wheel.radius(fRadius) > fMaxRadius) {
 			fMaxRadius = wheel.radius(fRadius);
 		}
 	}
 
 	return fMaxRadius;
+}
+
+void drawHUD() {
+	// Left side (drive)
+	fill(48, 48, 48);
+	drawWheelIndicators.draw("Wheel Indicators");
+	// Different rules for each mode
+	if (bDriveMode) {
+		text("Drive Mode: 1", 10, 10);
+		drawRoverRotation.draw("Rotation: " + fRoverRotation);
+	} else {
+		text("Drive Mode: 0", 10, 10);
+		drawRoverRadius.draw("Radius: " + fRoverRadius);
+		drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
+		text("Radius Multiplier: ", 10, height - 15);
+		radiusMultiplier.draw(String.format("%.0f", fRadiusMultiplierTemp), textWidth("Radius Multiplier: ") + 10, height - 15);
+	}
+
+	// Right side (mast)
+	fill(48, 48, 48);
+	strokeWeight(2);
+	float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
+	// Different rules for each mode
+	if (bMastMode) {
+		text("Mast Mode: 1", width - fRightTextWidth, 10);
+	} else {
+		text("Mast Mode: 0", width - fRightTextWidth, 10);
+	}
+	text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
 }
