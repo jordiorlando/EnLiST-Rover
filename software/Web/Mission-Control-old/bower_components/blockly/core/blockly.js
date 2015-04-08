@@ -55,12 +55,6 @@ goog.require('goog.userAgent');
 
 
 /**
- * Path to Blockly's media directory.  Can be relative, absolute, or remote.
- * Used for loading sounds and sprites.  Defaults to demo server.
- */
-Blockly.pathToMedia = 'https://blockly-demo.appspot.com/static/media/';
-
-/**
  * Required name space for SVG elements.
  * @const
  */
@@ -208,6 +202,11 @@ Blockly.BUMP_DELAY = 250;
 Blockly.COLLAPSE_CHARS = 30;
 
 /**
+ * Length in ms for a touch to become a long press.
+ */
+Blockly.LONGPRESS = 750;
+
+/**
  * The main workspace (defined by inject.js).
  * @type {Blockly.Workspace}
  */
@@ -278,16 +277,20 @@ Blockly.onMouseDown_ = function(e) {
   Blockly.terminateDrag_();  // In case mouse-up event was lost.
   Blockly.hideChaff();
   var isTargetSvg = e.target && e.target.nodeName &&
-      e.target.nodeName.toLowerCase() == 'svg';
+      (e.target.nodeName.toLowerCase() == 'svg' ||
+       e.target == Blockly.mainWorkspace.svgBackground_);
   if (!Blockly.readOnly && Blockly.selected && isTargetSvg) {
     // Clicking on the document clears the selection.
     Blockly.selected.unselect();
   }
-  if (e.target == Blockly.svg && Blockly.isRightButton(e)) {
-    // Right-click.
+  if ((e.target == Blockly.svg ||
+       e.target == Blockly.mainWorkspace.svgBackground_) &&
+      Blockly.isRightButton(e)) {
+    // Right-click on main workspace (not in a mutator).
     Blockly.showContextMenu_(e);
   } else if ((Blockly.readOnly || isTargetSvg) &&
              Blockly.mainWorkspace.scrollbar) {
+    Blockly.removeAllRanges();
     // If the workspace is editable, only allow dragging when gripping empty
     // space.  Otherwise, allow dragging when gripping anywhere.
     Blockly.mainWorkspace.dragMode = true;
@@ -355,6 +358,11 @@ Blockly.onMouseMove_ = function(e) {
     // Move the scrollbars and the page will scroll automatically.
     Blockly.mainWorkspace.scrollbar.set(-x - metrics.contentLeft,
                                         -y - metrics.contentTop);
+    // Cancel the long-press if the drag has moved too far.
+    var dr = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+    if (dr > Blockly.DRAG_RADIUS) {
+      Blockly.longStop_();
+    }
     e.stopPropagation();
   }
 };
@@ -369,7 +377,6 @@ Blockly.onKeyDown_ = function(e) {
     // When focused on an HTML text input widget, don't trap any keys.
     return;
   }
-  // TODO: Add keyboard support for cursoring around the context menu.
   if (e.keyCode == 27) {
     // Pressing esc closes the context menu.
     Blockly.hideChaff();
@@ -419,6 +426,47 @@ Blockly.terminateDrag_ = function() {
 };
 
 /**
+ * PID of queued long-press task.
+ * @private
+ */
+Blockly.longPid_ = 0;
+
+/**
+ * Context menus on touch devices are activated using a long-press.
+ * Unfortunately the contextmenu touch event is currently (2015) only suported
+ * by Chrome.  This function is fired on any touchstart event, queues a task,
+ * which after about a second opens the context menu.  The tasks is killed
+ * if the touch event terminates early.
+ * @param {!Event} e Touch start event.
+ * @param {Blockly.Block} block The block under the touchstart event, or null
+ *   if the event was on the workspace.
+ * @private
+ */
+Blockly.longStart_ = function(e, block) {
+  Blockly.longStop_();
+  Blockly.longPid_ = setTimeout(function() {
+      e.button = 2;  // Simulate a right button click.
+      if (block) {
+        block.onMouseDown_(e);
+      } else {
+        Blockly.onMouseDown_(e);
+      }
+    }, Blockly.LONGPRESS);
+};
+
+/**
+ * Nope, that's not a long-press.  Either touchend or touchcancel was fired,
+ * or a drag hath begun.  Kill the queued long-press task.
+ * @private
+ */
+Blockly.longStop_ = function() {
+  if (Blockly.longPid_) {
+    clearTimeout(Blockly.longPid_);
+    Blockly.longPid_ = 0;
+  }
+};
+
+/**
  * Copy a block onto the local clipboard.
  * @param {!Blockly.Block} block Block to be copied.
  * @private
@@ -439,17 +487,18 @@ Blockly.copy_ = function(block) {
  * @private
  */
 Blockly.showContextMenu_ = function(e) {
-  if (Blockly.readOnly) {
+  var workspace = Blockly.mainWorkspace;
+  if (workspace.options.readOnly) {
     return;
   }
   var options = [];
   // Add a little animation to collapsing and expanding.
   var COLLAPSE_DELAY = 10;
 
-  if (Blockly.collapse) {
+  if (workspace.options.collapse) {
     var hasCollapsedBlocks = false;
     var hasExpandedBlocks = false;
-    var topBlocks = Blockly.mainWorkspace.getTopBlocks(false);
+    var topBlocks = workspace.getTopBlocks(false);
     for (var i = 0; i < topBlocks.length; i++) {
       var block = topBlocks[i];
       while (block) {
@@ -531,18 +580,17 @@ Blockly.hideChaff = function(opt_allowToolbox) {
  * Deselect this text, so that it doesn't mess up any subsequent drag.
  */
 Blockly.removeAllRanges = function() {
-  if (window.getSelection) {  // W3
-    var sel = window.getSelection();
-    if (sel && sel.removeAllRanges) {
-      sel.removeAllRanges();
-      setTimeout(function() {
-          try {
-            window.getSelection().removeAllRanges();
-          } catch (e) {
-            // MSIE throws 'error 800a025e' here.
+  if (getSelection()) {
+    setTimeout(function() {
+        try {
+          var selection = getSelection();
+          if (!selection.isCollapsed) {
+            selection.removeAllRanges();
           }
-        }, 0);
-    }
+        } catch (e) {
+          // MSIE throws 'error 800a025e' here.
+        }
+      }, 0);
   }
 };
 
@@ -648,29 +696,34 @@ Blockly.playAudio = function(name, opt_volume) {
  * @private
  */
 Blockly.getMainWorkspaceMetrics_ = function() {
+  var mainWorkspace = Blockly.mainWorkspace;
   var svgSize = Blockly.svgSize();
-  if (Blockly.mainWorkspace.toolbox_) {
-    svgSize.width -= Blockly.mainWorkspace.toolbox_.width;
+  if (mainWorkspace.toolbox_) {
+    svgSize.width -= mainWorkspace.toolbox_.width;
   }
   var viewWidth = svgSize.width - Blockly.Scrollbar.scrollbarThickness;
   var viewHeight = svgSize.height - Blockly.Scrollbar.scrollbarThickness;
   try {
-    var blockBox = Blockly.mainWorkspace.getCanvas().getBBox();
+    var blockBox = mainWorkspace.getCanvas().getBBox();
   } catch (e) {
     // Firefox has trouble with hidden elements (Bug 528969).
     return null;
   }
-  if (Blockly.mainWorkspace.scrollbar) {
+  if (mainWorkspace.scrollbar) {
     // Add a border around the content that is at least half a screenful wide.
     // Ensure border is wide enough that blocks can scroll over entire screen.
+    var MARGIN = 5;
+    var leftScroll = Blockly.RTL ? Blockly.Scrollbar.scrollbarThickness : 0;
+    var rightScroll = Blockly.RTL ? 0 : Blockly.Scrollbar.scrollbarThickness;
     var leftEdge = Math.min(blockBox.x - viewWidth / 2,
-                            blockBox.x + blockBox.width - viewWidth);
+        blockBox.x + blockBox.width - viewWidth - leftScroll + MARGIN);
     var rightEdge = Math.max(blockBox.x + blockBox.width + viewWidth / 2,
-                             blockBox.x + viewWidth);
+        blockBox.x + viewWidth + rightScroll - MARGIN);
     var topEdge = Math.min(blockBox.y - viewHeight / 2,
-                           blockBox.y + blockBox.height - viewHeight);
+        blockBox.y + blockBox.height - viewHeight + MARGIN);
     var bottomEdge = Math.max(blockBox.y + blockBox.height + viewHeight / 2,
-                              blockBox.y + viewHeight);
+        blockBox.y + viewHeight + Blockly.Scrollbar.scrollbarThickness -
+        MARGIN);
   } else {
     var leftEdge = blockBox.x;
     var rightEdge = leftEdge + blockBox.width;
@@ -678,16 +731,16 @@ Blockly.getMainWorkspaceMetrics_ = function() {
     var bottomEdge = topEdge + blockBox.height;
   }
   var absoluteLeft = 0;
-  if (!Blockly.RTL && Blockly.mainWorkspace.toolbox_) {
-    absoluteLeft = Blockly.mainWorkspace.toolbox_.width;
+  if (!Blockly.RTL && mainWorkspace.toolbox_) {
+    absoluteLeft = mainWorkspace.toolbox_.width;
   }
   var metrics = {
     viewHeight: svgSize.height,
     viewWidth: svgSize.width,
     contentHeight: bottomEdge - topEdge,
     contentWidth: rightEdge - leftEdge,
-    viewTop: -Blockly.mainWorkspace.scrollY,
-    viewLeft: -Blockly.mainWorkspace.scrollX,
+    viewTop: -mainWorkspace.scrollY,
+    viewLeft: -mainWorkspace.scrollX,
     contentTop: topEdge,
     contentLeft: leftEdge,
     absoluteTop: 0,
@@ -703,21 +756,24 @@ Blockly.getMainWorkspaceMetrics_ = function() {
  * @private
  */
 Blockly.setMainWorkspaceMetrics_ = function(xyRatio) {
-  if (!Blockly.mainWorkspace.scrollbar) {
+  var mainWorkspace = Blockly.mainWorkspace;
+  if (!mainWorkspace.scrollbar) {
     throw 'Attempt to set main workspace scroll without scrollbars.';
   }
   var metrics = Blockly.getMainWorkspaceMetrics_();
   if (goog.isNumber(xyRatio.x)) {
-    Blockly.mainWorkspace.scrollX = -metrics.contentWidth * xyRatio.x -
+    mainWorkspace.scrollX = -metrics.contentWidth * xyRatio.x -
         metrics.contentLeft;
   }
   if (goog.isNumber(xyRatio.y)) {
-    Blockly.mainWorkspace.scrollY = -metrics.contentHeight * xyRatio.y -
+    mainWorkspace.scrollY = -metrics.contentHeight * xyRatio.y -
         metrics.contentTop;
   }
-  Blockly.mainWorkspace.translate(
-      Blockly.mainWorkspace.scrollX + metrics.absoluteLeft,
-      Blockly.mainWorkspace.scrollY + metrics.absoluteTop);
+  var x = mainWorkspace.scrollX + metrics.absoluteLeft;
+  var y = mainWorkspace.scrollY + metrics.absoluteTop;
+  mainWorkspace.translate(x, y);
+  mainWorkspace.gridPattern_.setAttribute('x', x);
+  mainWorkspace.gridPattern_.setAttribute('y', y);
 };
 
 /**
