@@ -17,7 +17,7 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "polymer/polymer",
+    "polymer": "polymer/polymer#0.5.5",
     "paper-elements": "polymer/paper-elements",
     "core-elements": "polymer/core-elements",
     "blockly": "google/blockly",
