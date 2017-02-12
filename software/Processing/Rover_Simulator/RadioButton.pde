@@ -2,90 +2,91 @@
 // text label. Also customizable.
 // TODO: finish comments
 public class RadioButton {
-  private boolean bPressed;
-  private float fXPos, fYPos, fRadius;
-  private color cStrokeColor = color(48, 48, 48);
-  private color cFillColor = color(64, 64, 64);
-  private color cHoverColor = color(128, 128, 128);
+  private boolean isPressed;
+  private float xPos, yPos, radius;
 
-  RadioButton(float fXTemp, float fYTemp, float fRadiusTemp) {
-    fXPos = fXTemp;
-    fYPos = fYTemp;
-    fRadius = fRadiusTemp;
+  private color strokeColor = color(48, 48, 48);
+  private color fillColor   = color(64, 64, 64);
+  private color hoverColor  = color(128, 128, 128);
+
+  RadioButton(float x, float y, float r) {
+    xPos = x;
+    yPos = y;
+    radius = r;
   }
 
-  RadioButton(float fXTemp, float fYTemp, float fRadiusTemp,
-  color cStrokeColorTemp) {
-    fXPos = fXTemp;
-    fYPos = fYTemp;
-    fRadius = fRadiusTemp;
-    cStrokeColor = cStrokeColorTemp;
+  RadioButton(float x, float y, float r,
+  color s) {
+    xPos = x;
+    yPos = y;
+    radius = r;
+    strokeColor = s;
   }
 
-  RadioButton(float fXTemp, float fYTemp, float fRadiusTemp,
-  color cStrokeColorTemp,
-  color cFillColorTemp) {
-    fXPos = fXTemp;
-    fYPos = fYTemp;
-    fRadius = fRadiusTemp;
-    cStrokeColor = cStrokeColorTemp;
-    cFillColor = cFillColorTemp;
+  RadioButton(float x, float y, float r,
+  color s,
+  color f) {
+    xPos = x;
+    yPos = y;
+    radius = r;
+    strokeColor = s;
+    fillColor = f;
   }
 
-  RadioButton(float fXTemp, float fYTemp, float fRadiusTemp,
-  color cStrokeColorTemp,
-  color cFillColorTemp,
-  color cHoverColorTemp) {
-    fXPos = fXTemp;
-    fYPos = fYTemp;
-    fRadius = fRadiusTemp;
-    cStrokeColor = cStrokeColorTemp;
-    cFillColor = cFillColorTemp;
-    cHoverColor = cHoverColorTemp;
+  RadioButton(float x, float y, float r,
+  color s,
+  color f,
+  color h) {
+    xPos = x;
+    yPos = y;
+    radius = r;
+    strokeColor = s;
+    fillColor = f;
+    hoverColor = h;
   }
 
   void draw() {
     if (over()) {
-      fill(cHoverColor);
-    } else if (bPressed) {
-      fill(cFillColor);
+      fill(hoverColor);
+    } else if (isPressed) {
+      fill(fillColor);
     } else {
       noFill();
     }
     strokeWeight(1);
-    stroke(cStrokeColor);
+    stroke(strokeColor);
     ellipseMode(RADIUS);
-    ellipse(fXPos, fYPos, fRadius, fRadius);
+    ellipse(xPos, yPos, radius, radius);
   }
 
-  void draw(String sText) {
+  void draw(String t) {
     if (over()) {
-      fill(cHoverColor);
-    } else if (bPressed) {
-      fill(cFillColor);
+      fill(hoverColor);
+    } else if (isPressed) {
+      fill(fillColor);
     } else {
       noFill();
     }
     strokeWeight(1);
-    stroke(cStrokeColor);
+    stroke(strokeColor);
     ellipseMode(RADIUS);
-    ellipse(fXPos, fYPos, fRadius, fRadius);
+    ellipse(xPos, yPos, radius, radius);
 
-    fill(cFillColor);
-    textSize(fRadius * 3);
-    text(sText, fXPos + fRadius + 10, fYPos - 2);
+    fill(fillColor);
+    textSize(radius * 3);
+    text(t, xPos + radius + 10, yPos - 2);
   }
 
-  void set(boolean bState) {
-    bPressed = bState;
+  void set(boolean state) {
+    isPressed = state;
   }
 
   void toggle() {
-    bPressed = !bPressed;
+    isPressed = !isPressed;
   }
 
   boolean over() {
-    if (sqrt(sq(mouseX - fXPos) + sq(mouseY - fYPos)) > fRadius + 2) {
+    if (sqrt(sq(mouseX - xPos) + sq(mouseY - yPos)) > radius + 2) {
       return false;
     } else {
       return true;
@@ -93,6 +94,6 @@ public class RadioButton {
   }
 
   boolean pressed() {
-    return bPressed;
+    return isPressed;
   }
 }

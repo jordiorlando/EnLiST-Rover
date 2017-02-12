@@ -2,32 +2,32 @@
 // Also customizable.
 // TODO: finish comments
 public class TextField {
-  private boolean bPressed;
-  private float fXPos, fYPos, fWidth = 20;
-  private color cStrokeColor = color(48, 48, 48);
-  private color cTextColor = color(48, 48, 48);
-  private color cHoverColor = color(64, 64, 64);
+  private boolean isPressed;
+  private float xPos, yPos, _width = 20;
+  private color strokeColor = color(48, 48, 48);
+  private color textColor = color(48, 48, 48);
+  private color hoverColor = color(64, 64, 64);
 
   TextField() {
   }
 
-  TextField(color cStrokeColorTemp) {
-    cStrokeColor = cStrokeColorTemp;
+  TextField(color s) {
+    strokeColor = s;
   }
 
-  TextField(color cStrokeColorTemp, color cTextColorTemp) {
-    cStrokeColor = cStrokeColorTemp;
-    cTextColor = cTextColorTemp;
+  TextField(color s, color t) {
+    strokeColor = s;
+    textColor = t;
   }
 
-  TextField(color cStrokeColorTemp, color cTextColorTemp, color cHoverColorTemp) {
-    cStrokeColor = cStrokeColorTemp;
-    cTextColor = cTextColorTemp;
-    cHoverColor = cHoverColorTemp;
+  TextField(color s, color t, color h) {
+    strokeColor = s;
+    textColor = t;
+    hoverColor = h;
   }
 
   void draw() {
-    if (over() || bPressed) {
+    if (over() || isPressed) {
       cursor(TEXT);
       fill(255, 255, 255);
     } else {
@@ -37,13 +37,13 @@ public class TextField {
 
     noStroke();
     rectMode(CORNER);
-    rect(fXPos - 2, fYPos - 6, 24, 16, 2);
+    rect(xPos - 2, yPos - 6, 24, 16, 2);
   }
 
-  void draw(String sText) {
-    fWidth = textWidth(sText);
+  void draw(String t) {
+    _width = textWidth(t);
 
-    if (over() || bPressed) {
+    if (over() || isPressed) {
       cursor(TEXT);
       fill(255, 255, 255);
     } else {
@@ -53,18 +53,18 @@ public class TextField {
 
     noStroke();
     rectMode(CORNER);
-    rect(fXPos - 2, fYPos - 6, fWidth + 4, 16, 2);
+    rect(xPos - 2, yPos - 6, _width + 4, 16, 2);
 
-    fill(cTextColor);
-    text(sText, fXPos, fYPos);
+    fill(textColor);
+    text(t, xPos, yPos);
   }
 
-  void draw(String sText, float fXTemp, float fYTemp) {
-    fXPos = fXTemp;
-    fYPos = fYTemp;
-    fWidth = textWidth(sText);
+  void draw(String t, float x, float y) {
+    xPos = x;
+    yPos = y;
+    _width = textWidth(t);
 
-    if (over() || bPressed) {
+    if (over() || isPressed) {
       cursor(TEXT);
       fill(255, 255, 255);
     } else {
@@ -74,18 +74,19 @@ public class TextField {
 
     noStroke();
     rectMode(CORNER);
-    rect(fXPos - 2, fYPos - 6, fWidth + 4, 16, 2);
+    rect(xPos - 2, yPos - 6, _width + 4, 16, 2);
 
-    fill(cTextColor);
-    text(sText, fXPos, fYPos);
+    fill(textColor);
+    text(t, xPos, yPos);
   }
 
-  void set(boolean bState) {
-    bPressed = bState;
+  void set(boolean state) {
+    isPressed = state;
   }
 
   boolean over() {
-    if ((mouseX > fXPos - 2) && (mouseX < fXPos + fWidth + 4) && (mouseY > fYPos - 6) && (mouseY < fYPos + 10)) {
+    if ((mouseX > xPos - 2) && (mouseX < xPos + _width + 4) &&
+        (mouseY > yPos - 6) && (mouseY < yPos + 10)) {
       return true;
     } else {
       return false;
@@ -93,6 +94,6 @@ public class TextField {
   }
 
   boolean pressed() {
-    return bPressed;
+    return isPressed;
   }
 }

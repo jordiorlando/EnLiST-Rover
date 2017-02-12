@@ -1,28 +1,28 @@
 // Defines
-public static final boolean STATIONARY = false;
-public static final boolean STEERABLE = true;
-public static final boolean NORMAL = false;
-public static final boolean REVERSE = true;
+public static final boolean STATIONARY  = false;
+public static final boolean STEERABLE   = true;
+public static final boolean NORMAL      = false;
+public static final boolean REVERSE     = true;
 
 public class Rover {
   // Wheel array
   Wheel[] wheels = new Wheel[6];
   Mast mast;
-  private float fWidth, fHeight;
+  private float bodyWidth, bodyHeight;
 
-  Rover(float fWidthTemp, float fHeightTemp) {
-    fWidth = fWidthTemp / 2;
-    fHeight = fHeightTemp / 2;
+  Rover(float w, float h) {
+    bodyWidth = w / 2;
+    bodyHeight = h / 2;
 
     // Wheel declarations
-    wheels[0] = new Wheel(STEERABLE, REVERSE, -(fWidth * 1.5), fHeight);
-    wheels[1] = new Wheel(STEERABLE, NORMAL, fWidth * 1.5, fHeight);
-    wheels[2] = new Wheel(STATIONARY, REVERSE, -(fWidth * 1.5), 0);
-    wheels[3] = new Wheel(STATIONARY, NORMAL, fWidth * 1.5, 0);
-    wheels[4] = new Wheel(STEERABLE, REVERSE, -(fWidth * 1.5), -fHeight);
-    wheels[5] = new Wheel(STEERABLE, NORMAL, fWidth * 1.5, -fHeight);
+    wheels[0] = new Wheel(STEERABLE,  REVERSE, -bodyWidth * 1.5, bodyHeight);
+    wheels[1] = new Wheel(STEERABLE,  NORMAL,   bodyWidth * 1.5, bodyHeight);
+    wheels[2] = new Wheel(STATIONARY, REVERSE, -bodyWidth * 1.5, 0);
+    wheels[3] = new Wheel(STATIONARY, NORMAL,   bodyWidth * 1.5, 0);
+    wheels[4] = new Wheel(STEERABLE,  REVERSE, -bodyWidth * 1.5, -bodyHeight);
+    wheels[5] = new Wheel(STEERABLE,  NORMAL,   bodyWidth * 1.5, -bodyHeight);
 
-    mast = new Mast(0, fHeight * 0.875);
+    mast = new Mast(0, bodyHeight * 0.875);
   }
 
   void draw() {
@@ -34,12 +34,12 @@ public class Rover {
       // Update all wheels
       wheel.update();
 
-      if (wheel.bPressed) {
+      if (wheel.isPressed) {
         wheel.drawRadius();
       }
     }
 
-    if (bDriveMode) {
+    if (driveMode) {
       drawBody();
       mast.draw();
       if (drawRoverRotation.pressed()) {
@@ -65,15 +65,15 @@ public class Rover {
   }
 
   boolean over() {
-    if ((mouseX > width / 2 - fWidth) && (mouseX < width / 2 + fWidth) && (mouseY > height / 2 - fHeight) && (mouseY < height / 2 + fHeight)) {
+    if ((mouseX > width / 2 - bodyWidth) && (mouseX < width / 2 + bodyWidth) &&
+        (mouseY > height / 2 - bodyHeight) && (mouseY < height / 2 + bodyHeight)) {
       return true;
     } else {
       return false;
     }
   }
 
-  // Draws a circle that represents the path that the center of the rover will
-  // take.
+  // Draws a circle representing the path that the center of the rover will take
   private void drawRadius() {
     noFill();
     stroke(0, 0, 0, 200);
@@ -85,24 +85,22 @@ public class Rover {
       line(0, -height / 2, 0, height / 2);
     } else {
       // If not, draw a circle, and a point at the center of that circle
-      point(-fRoverRadius, 0);
-      ellipse(-fRoverRadius, 0, abs(fRoverRadius), abs(fRoverRadius));
+      point(-roverRadius, 0);
+      ellipse(-roverRadius, 0, abs(roverRadius), abs(roverRadius));
     }
   }
 
-  // Draws a vector that represents the translational velocity of the center of
-  // the rover.
+  // Draws a vector representing the velocity of the center of the rover
   private void drawVelocity() {
     // Don't draw anything if the rover isn't moving
-    if (fRoverVelocity != 0) {
+    if (roverVelocity != 0) {
       stroke(0, 0, 0, 255);
-      line(0, 0, 0, -fRoverVelocity * fHeight * 0.75);
-      line(-10, -fRoverVelocity * fHeight * 0.75, 10, -fRoverVelocity * fHeight * 0.75);
+      line(0, 0, 0, -roverVelocity * bodyHeight * 0.75);
+      line(-10, -roverVelocity * bodyHeight * 0.75, 10, -roverVelocity * bodyHeight * 0.75);
     }
   }
 
-  // Draws a nice curvy vector-thing that represents the rover's rotation about
-  // its center.
+  // Draws a curved vector representing the rover's rotation about its center
   private void drawRotation() {
     noFill();
     stroke(0, 0, 0, 255);
@@ -111,22 +109,22 @@ public class Rover {
     point(0, 0);
 
     // Only necessary because Processing does not allow negative angles in arcs
-    if (fRoverRotation < 0) {
-      arc(0, 0, 50, 50, 0, -fRoverRotation * TWO_PI);
+    if (roverRotation < 0) {
+      arc(0, 0, 50, 50, 0, -roverRotation * TWO_PI);
     } else {
-      arc(0, 0, 50, 50, TWO_PI - fRoverRotation * TWO_PI, TWO_PI);
+      arc(0, 0, 50, 50, TWO_PI - roverRotation * TWO_PI, TWO_PI);
     }
 
     // Only draw the tip of the arrow if the rover is actually turning
-    if (fRoverRotation != 0) {
+    if (roverRotation != 0) {
       pushMatrix();
-      rotate(-fRoverRotation * TWO_PI);
+      rotate(-roverRotation * TWO_PI);
       line(45, 0, 55, 0);
       popMatrix();
     }
   }
 
-  // Draws the body of the rover. Just a stationary, semi-translucent rectangle.
+  // Draws the body of the rover as a stationary, semi-translucent rectangle
   private void drawBody() {
     fill(255, 255, 255, 127);
     if (over()) {
@@ -136,46 +134,44 @@ public class Rover {
     }
 
     rectMode(RADIUS);
-    rect(0, 0, fWidth, fHeight, 5);
+    rect(0, 0, bodyWidth, bodyHeight, 5);
   }
 
-  // Wheel class. Stores permanent data about each wheel, and is also responsible
-  // for calculating all the required numbers. It also takes care of drawing
-  // itself.
+  // Wheel class. Stores data about each wheel, and is also responsible for
+  // calculating all required numbers. It also takes care of drawing itself.
   class Wheel {
     // Determines whether this wheel is capable of rotating or not and whether
     // or not it is mounted backwards.
-    private boolean bSteerable, bReverse;
+    private boolean isSteerable, isReverse;
     // The horizontal and vertical offsets from the center of the rover and the
     // angle the wheel is mounted at.
-    private float fXPos, fYPos, fCenterAngle;
+    private float xPos, yPos, centerAngle;
     // The center of the circle around which the wheel will travel, relative to
     // the wheel.
-    private float fCenterX, fCenterY;
+    private float centerX, centerY;
     // The three variables that define the motion of the wheel
-    private float fAngle, fRadius, fVelocity;
+    private float _angle, _radius, _velocity;
     // Flag to set whether or not the wheel has been pressed
-    private boolean bPressed = true;
+    private boolean isPressed = true;
 
-    private float fWheelWidth, fWheelHeight;
+    private float _width, _height;
 
-    // Constructor. Takes an input to determine whether or not it is steerable
-    // as well as its horizontal and vertical offsets from the center of the
-    // rover.
-    Wheel(boolean bSteerableTemp, boolean bReverseTemp, float fXTemp, float fYTemp) {
-      bSteerable = bSteerableTemp;
-      bReverse = bReverseTemp;
-      fXPos = fXTemp;
-      fYPos = fYTemp;
-      fWheelWidth = fWidth / 5;
-      fWheelHeight = fHeight / 5;
+    // Constructor. Takes inputs to determine whether or not it is steerable as
+    // well as its horizontal and vertical offsets from the center of the rover.
+    Wheel(boolean s, boolean r, float x, float y) {
+      isSteerable = s;
+      isReverse = r;
+      xPos = x;
+      yPos = y;
+      _width = bodyWidth / 5;
+      _height = bodyHeight / 5;
 
       // Calculate the angle of the wheel's home position. This corresponds to
       // 0 degrees on the servo.
-      fCenterAngle = atan2(fYPos, fXPos);
+      centerAngle = atan2(yPos, xPos);
     }
 
-    // Updates all the wheel variables.
+    // Updates all the wheel variables
     void update() {
       center();
       angle();
@@ -183,52 +179,53 @@ public class Rover {
       velocity();
     }
 
-    // Calls all the required draw functions.
+    // Calls all the required draw functions
     void draw() {
       pushMatrix();
-      translate(fXPos, -fYPos);
-      rotate(-fAngle);
+      translate(xPos, -yPos);
+      rotate(-_angle);
 
       drawWheel();
       stroke(0, 0, 0);
-      if (bPressed) {
+      if (isPressed) {
         point(0, 0);
         drawVelocity();
       }
 
       popMatrix();
 
-      if (bPressed) {
+      if (isPressed) {
         fill(48, 48, 48);
         textAlign(CENTER, CENTER);
 
-        text(String.format("%.0f", degrees(servoAngle())) + (char)0x00B0, fXPos, -(fYPos + fWheelHeight + 20));
-        text(String.format("%.0f", wheelVelocity()), fXPos, -fYPos + fWheelHeight + 16);
+        text(String.format("%.0f", degrees(servoAngle())) + (char)0x00B0, xPos, -(yPos + _height + 20));
+        text(String.format("%.0f", wheelVelocity()), xPos, -yPos + _height + 16);
 
         textAlign(LEFT, CENTER);
       }
     }
 
     void set(boolean bState) {
-      bPressed = bState;
+      isPressed = bState;
     }
 
     void toggle() {
-      bPressed = !bPressed;
+      isPressed = !isPressed;
     }
 
 
-    // Returns a boolean telling whether or not the mouse is over the wheel.
+    // Returns a boolean telling whether or not the mouse is over the wheel
     boolean over() {
       radius();  // Make sure the angle calculation is up-to-date
 
       // Do some fancy-ass math
-      float fXDistance = float(mouseX) - (width / 2) - fXPos;
-      float fYDistance = float(mouseY) - (height / 2) + fYPos;
-      float fHypotenuse = sqrt(sq(fXDistance) + sq(fYDistance));
-      float fTheta = fAngle + atan2(fYDistance, fXDistance);
+      float xDistance  = float(mouseX) - (width / 2) - xPos;
+      float yDistance  = float(mouseY) - (height / 2) + yPos;
+      float hypotenuse = sqrt(sq(xDistance) + sq(yDistance));
+      float theta      = _angle + atan2(yDistance, xDistance);
 
-      if ((abs(fHypotenuse * cos(fTheta)) < fWheelHeight) && (abs(fHypotenuse * sin(fTheta)) < fWheelWidth)) {
+      if ((abs(hypotenuse * cos(theta)) < _height) &&
+          (abs(hypotenuse * sin(theta)) < _width)) {
         return true;
       } else {
         return false;
@@ -236,96 +233,96 @@ public class Rover {
     }
 
     float wheelVelocity() {
-      float fWheelVelocity = fVelocity * nMaxSpeed;
-      if (fWheelVelocity == -0) {
-        fWheelVelocity = 0;
+      float wv = _velocity * maxSpeedValue;
+      if (wv == -0) {
+        wv = 0;
       }
 
-      return fWheelVelocity;
+      return wv;
     }
 
-    // Converts the wheel angle to a servo position between -90 and 90 degrees.
+    // Converts the wheel angle to a servo position between -90 and 90 degrees
     float servoAngle() {
-      float fServoPosition = 0;
-      if (bSteerable) {
-        fServoPosition = fAngle - fCenterAngle;
+      float servoPosition = 0;
+      if (isSteerable) {
+        servoPosition = _angle - centerAngle;
 
         // Bound anything that is too large or too small
-        if ((fXPos * fYPos) < 0) {
-          fServoPosition -= PI;
-          if (fServoPosition < -PI) {
-            fServoPosition += TWO_PI;
+        if ((xPos * yPos) < 0) {
+          servoPosition -= PI;
+          if (servoPosition < -PI) {
+            servoPosition += TWO_PI;
           }
-        } else if (fServoPosition > PI){
-          fServoPosition -= TWO_PI;
+        } else if (servoPosition > PI){
+          servoPosition -= TWO_PI;
         }
       }
 
-      fServoPosition += HALF_PI;
-      fServoPosition = abs(fServoPosition);
+      servoPosition += HALF_PI;
+      servoPosition = abs(servoPosition);
 
-      return fServoPosition;
+      return servoPosition;
     }
 
     // Calculates the horizontal and vertical distances from the center of
     // rotation of the wheel to the center of the wheel.
     private void center() {
-      fCenterX = fRoverRadius + fXPos;
-      fCenterY = fYPos;
+      centerX = roverRadius + xPos;
+      centerY = yPos;
     }
 
-    // Calculates the angle for the wheel in radians using the global variables.
+    // Calculates the angle for the wheel in radians using the global variables
     private float angle() {
-      if (bDriveMode) {
-        if (!bSteerable) {
-          fAngle = HALF_PI;
-        } else if (fXPos > 0) {
-          fAngle = fCenterAngle + HALF_PI;
+      if (driveMode) {
+        if (!isSteerable) {
+          _angle = HALF_PI;
+        } else if (xPos > 0) {
+          _angle = centerAngle + HALF_PI;
         } else {
-          fAngle = fCenterAngle - HALF_PI;
+          _angle = centerAngle - HALF_PI;
         }
       } else {
-        if (!bSteerable) {
-          fAngle = HALF_PI;
-        } else if (fRoverRadius > 0) {
-          fAngle = atan2(fCenterY, fCenterX) + HALF_PI;
+        if (!isSteerable) {
+          _angle = HALF_PI;
+        } else if (roverRadius > 0) {
+          _angle = atan2(centerY, centerX) + HALF_PI;
         } else {
-          fAngle = atan2(fCenterY, fCenterX) - HALF_PI;
+          _angle = atan2(centerY, centerX) - HALF_PI;
         }
       }
 
       // If the wheel is reversed, reverse the angle
-      if (bReverse) {
-        fAngle += PI;
+      if (isReverse) {
+        _angle += PI;
       }
 
       // Bound the angle to +/- 2PI
-      fAngle %= TWO_PI; // TODO: fix this
+      _angle %= TWO_PI; // TODO: fix this
 
-      return fAngle;
+      return _angle;
     }
 
-    // Calculates the wheel radius using an arbitrary/hypothetical input value.
-    private float radius(float fRadiusIn) {
-      return sqrt(sq(fRadiusIn + fXPos) + sq(fYPos));
+    // Calculates the wheel radius using an arbitrary/hypothetical input value
+    private float radius(float r) {
+      return sqrt(sq(r + xPos) + sq(yPos));
     }
 
-    // Calculates the wheel radius using the global variables.
+    // Calculates the wheel radius using the global variables
     private float radius() {
-      fRadius = sqrt(sq(fRoverRadius + fXPos) + sq(fYPos));
+      _radius = sqrt(sq(roverRadius + xPos) + sq(yPos));
 
-      return fRadius;
+      return _radius;
     }
 
-    // Calculates the wheel velocity using the global variables.
+    // Calculates the wheel velocity using the global variables
     private float velocity() {
-      if (bDriveMode) {
-        fVelocity = fRoverRotation * fRadius / maxRadius(fRoverRadius);
+      if (driveMode) {
+        _velocity = roverRotation * _radius / maxRadius(roverRadius);
       } else {
-        fVelocity = fRadius * fRoverVelocity / abs(fRoverRadius);
+        _velocity = _radius * roverVelocity / abs(roverRadius);
 
-        if (bReverse) {
-          fVelocity *= -1;
+        if (isReverse) {
+          _velocity *= -1;
         }
 
         // Check for situations where the wheel should turn in the opposite
@@ -333,43 +330,43 @@ public class Rover {
         // non-steerable or has a y-position of 0 and its wheel radius is
         // greater than the global rover radius.
         //
-        // TODO: make this work with all wheels, not just the non-steerable
-        // ones.
-        if ((!bSteerable || (fYPos == 0)) && (Math.signum(fRoverRadius) * (fRoverRadius + fXPos) < 0)) {
-          fVelocity *= -1;
+        // TODO: make this work with all wheels, not just non-steerable ones
+        if ((!isSteerable || (yPos == 0)) &&
+            (Math.signum(roverRadius) * (roverRadius + xPos) < 0)) {
+          _velocity *= -1;
         }
       }
 
-      return fVelocity;
+      return _velocity;
     }
 
-    // Draws a circle representing the actual path this wheel will take.
+    // Draws a circle representing the actual path this wheel will take
     void drawRadius() {
       noFill();
       stroke(127, 127, 127, 127);
       ellipseMode(RADIUS);
 
-      if (!bDriveMode && X1Stick == 0) {
+      if (!driveMode && X1Stick == 0) {
         // If we're going straight, just draw a line
-        line(fXPos, -height / 2, fXPos, height / 2);
+        line(xPos, -height / 2, xPos, height / 2);
       } else {
         // If not, draw a circle, and a point at the center of that circle
-        point(-fRoverRadius, 0);
-        ellipse(-fRoverRadius, 0, fRadius, fRadius);
+        point(-roverRadius, 0);
+        ellipse(-roverRadius, 0, _radius, _radius);
       }
     }
 
-    // Draws a vector that represents the velocity of the wheel.
+    // Draws a vector that represents the velocity of the wheel
     private void drawVelocity() {
       // Don't draw anything if the wheel isn't turning
-      if (fVelocity != 0) {
+      if (_velocity != 0) {
         stroke(255, 255, 255);
-        line(0, 0, fVelocity * fWheelHeight * 0.75, 0);
-        line(fVelocity * fWheelHeight * 0.75, -2, fVelocity * fWheelHeight * 0.75, 2);
+        line(0, 0, _velocity * _height * 0.75, 0);
+        line(_velocity * _height * 0.75, -2, _velocity * _height * 0.75, 2);
       }
     }
 
-    // Draws the actual wheel itself.
+    // Draws the actual wheel itself
     private void drawWheel() {
       fill(48, 48, 48, 239);
       if (over()) {
@@ -378,12 +375,12 @@ public class Rover {
         stroke(32, 32, 32, 239);
       }
       rectMode(RADIUS);
-      rect(0, 0, fWheelHeight, fWheelWidth, fWheelWidth / 2);
+      rect(0, 0, _height, _width, _width / 2);
 
       // Show an indicator on the outside of the wheel
       if (drawWheelIndicators.pressed()) {
         stroke(16, 16, 16, 239);
-        line(fWheelHeight - 10, fWheelWidth + 5, -fWheelHeight + 10, fWheelWidth + 5);
+        line(_height - 10, _width + 5, -_height + 10, _width + 5);
       }
     }
   }
@@ -391,32 +388,32 @@ public class Rover {
   // Draws the camera mast on the front of the rover
   class Mast {
     // The horizontal and vertical offsets from the center of the rover
-    private float fXPos, fYPos;
+    private float xPos, yPos;
 
-    Mast(float fXTemp, float fYTemp) {
-      fXPos = fXTemp;
-      fYPos = fYTemp;
+    Mast(float x, float y) {
+      xPos = x;
+      yPos = y;
     }
 
     void draw() {
       pushMatrix();
-      translate(fXPos, -fYPos);
+      translate(xPos, -yPos);
 
-      if (bMastMode) {
-        float fIncrement = X2Stick * PI / 100;
-        if (abs(fMastPan + fIncrement) <= PI) {
-          fMastPan += fIncrement;
+      if (mastMode) {
+        float increment = X2Stick * PI / 100;
+        if (abs(mastPanAngle + increment) <= PI) {
+          mastPanAngle += increment;
         }
       } else {
-        fMastPan = X2Stick * PI;
+        mastPanAngle = X2Stick * PI;
       }
-      rotate(fMastPan);
+      rotate(mastPanAngle);
 
       fill(48, 48, 48, 255);
       noStroke();
       rectMode(RADIUS);
-      rect(0, 0, fWidth / 2, fWidth / 8, fWidth / 16);
-      rect(0, fWidth / 8, fWidth / 4, fWidth / 16, fWidth / 16);
+      rect(0, 0, bodyWidth / 2, bodyWidth / 8, bodyWidth / 16);
+      rect(0, bodyWidth / 8, bodyWidth / 4, bodyWidth / 16, bodyWidth / 16);
 
       popMatrix();
     }

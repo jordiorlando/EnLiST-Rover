@@ -11,22 +11,22 @@ ControlDevice gpad;
 PFont f;  // Declare a font variable for on-screen text
 
 // String to store the keyboard input
-String sInputString = "";
+String inputString = "";
 
 // Stick inputs, all of the range [-1, 1]
 float X1Stick, Y1Stick, X2Stick, Y2Stick;
 
 // Constant declarations
-int nMaxSpeed = 255;
-float fRadiusMultiplier = 500, fRadiusMultiplierTemp = 500;
+int maxSpeedValue = 255;
+float radiusMultiplier = 500, radiusMultiplierTemp = 500;
 // Global variables for defining the rover's motion
-float fRoverRadius = 0, fRoverVelocity, fRoverRotation;
+float roverRadius = 0, roverVelocity, roverRotation;
 // Drive mode 0 is akin to a car, while 1 is only for rotating in place
-boolean bDriveMode = false;
+boolean driveMode = false;
 // Mast mode 0 is position control, while 1 is rate control
-boolean bMastMode = false;
+boolean mastMode = false;
 // Angle of the mast
-float fMastPan = 0;
+float mastPanAngle = 0;
 
 // Toggle for drawing the wheel indicators
 RadioButton drawWheelIndicators = new RadioButton(15, 30, 5);
@@ -36,11 +36,12 @@ RadioButton drawRoverVelocity = new RadioButton(15, 70, 5);
 RadioButton drawRoverRotation = new RadioButton(15, 50, 5);
 
 // Text field for the radius multiplier
-TextField radiusMultiplier = new TextField();
+TextField radiusMultiplierField = new TextField();
 
 // The actual rover object. Includes body, wheels, and mast.
 Rover rover = new Rover(250, 500);
 
+boolean arduinoConnected = false;
 // Declare a serial port for the Arduino
 Serial arduinoPort;
 
@@ -65,13 +66,13 @@ public void setup() {
     System.exit(-1); // End the program NOW!
   }
 
-  // Register a listener so that changeDriveMode() is called every time the
+  // Register a listener so that toggleDriveMode() is called every time the
   // left stick is pressed.
-  gpad.getButton("B1").plug(this, "changeDriveMode", ControlIO.ON_PRESS);
+  gpad.getButton("B1").plug(this, "toggleDriveMode", ControlIO.ON_PRESS);
 
-  // Register a listener so that changeMastMode() is called every time the
+  // Register a listener so that toggleMastMode() is called every time the
   // right stick is pressed.
-  gpad.getButton("B2").plug(this, "changeMastMode", ControlIO.ON_PRESS);
+  gpad.getButton("B2").plug(this, "toggleMastMode", ControlIO.ON_PRESS);
 
   // Initialize radio buttons
   drawWheelIndicators.set(true);
@@ -80,12 +81,13 @@ public void setup() {
   drawRoverRotation.set(true);
 
   // Initialize the radius multiplier text field
-  radiusMultiplier.set(false);
+  radiusMultiplierField.set(false);
 
   // Initialize serial port
-  //println(Serial.list()[9]);
-  String sPortName = Serial.list()[9];
-  arduinoPort = new Serial(this, sPortName, 115200);
+  if (arduinoConnected) {
+    //println(Serial.list()[9]);
+    arduinoPort = new Serial(this, Serial.list()[9], 115200);
+  }
 }
 
 public void draw() {
@@ -104,22 +106,22 @@ public void draw() {
   Y1Stick = 1 - (float(mouseY) * 2 / height);*/
 
   // Different rules for each mode
-  if (bDriveMode) {
-    fRoverRadius = 0;
-    fRoverVelocity = 0;
-    fRoverRotation = -X1Stick;
+  if (driveMode) {
+    roverRadius = 0;
+    roverVelocity = 0;
+    roverRotation = -X1Stick;
   } else {
     // Handle the endpoints of the functions. If the stick is all the way to
     // the left or the right, we have to set the rover radius equal to the
     // minimum positive or minimum negative float value, respectively.
     if (X1Stick == -1) {
-      fRoverRadius = Float.MIN_NORMAL;
+      roverRadius = Float.MIN_NORMAL;
     } else if (X1Stick == 1) {
-      fRoverRadius = -Float.MIN_NORMAL;
+      roverRadius = -Float.MIN_NORMAL;
     } else {
-      fRoverRadius = fRadiusMultiplier * tan(HALF_PI*(X1Stick + 1));
+      roverRadius = radiusMultiplier * tan(HALF_PI*(X1Stick + 1));
     }
-    fRoverVelocity = Y1Stick * abs(fRoverRadius) / maxRadius(fRoverRadius);
+    roverVelocity = Y1Stick * abs(roverRadius) / maxRadius(roverRadius);
   }
 
   // Draw the rover
@@ -129,19 +131,21 @@ public void draw() {
   drawHUD();
 
   // Write wheel0's servo position to the Arduino
-  arduinoPort.write('v' + String.format("%.0f", rover.wheels[0].wheelVelocity()));
-  arduinoPort.write('s' + String.format("%.0f", degrees(rover.wheels[0].servoAngle()) + 10));
+  if (arduinoConnected) {
+    arduinoPort.write('v' + String.format("%.0f", rover.wheels[0].wheelVelocity()));
+    arduinoPort.write('s' + String.format("%.0f", degrees(rover.wheels[0].servoAngle()) + 10));
+  }
 }
 
 // Automatically called whenever a mouse button is pressed.
 void mousePressed() {
   if (mouseButton == LEFT) {
-    if (bDriveMode) {
+    if (driveMode) {
       if (drawRoverRotation.over()) {
         drawRoverRotation.toggle();
       }
     } else {
-      float fRadiusWidth = textWidth("Radius Multiplier: ") + 10;
+      float radiusWidth = textWidth("Radius Multiplier: ") + 10;
 
       if (drawRoverRadius.over()) {
         drawRoverRadius.toggle();
@@ -149,18 +153,18 @@ void mousePressed() {
         drawRoverVelocity.toggle();
       }
 
-      if (radiusMultiplier.over()) {
-        radiusMultiplier.set(true);
+      if (radiusMultiplierField.over()) {
+        radiusMultiplierField.set(true);
       } else {
-        fRadiusMultiplierTemp = fRadiusMultiplier;
-        radiusMultiplier.set(false);
+        radiusMultiplierTemp = radiusMultiplier;
+        radiusMultiplierField.set(false);
       }
     }
 
     if (drawWheelIndicators.over()) {
       drawWheelIndicators.toggle();
     } else if (rover.over()) {
-      changeDriveMode();
+      toggleDriveMode();
     } else {
       // Check if the mouse is over any of the wheels
       for (Rover.Wheel wheel : rover.wheels) {
@@ -174,26 +178,26 @@ void mousePressed() {
 
 // Automatically called whenever a key is pressed on the keyboard.
 void keyPressed() {
-  if (radiusMultiplier.pressed()) {
+  if (radiusMultiplierField.pressed()) {
     if (key == '\n' ) {
-      fRadiusMultiplier = fRadiusMultiplierTemp;
-      sInputString = "";
+      radiusMultiplier = radiusMultiplierTemp;
+      inputString = "";
     } else if (key == 8) {
       // If the backspace key is pressed, delete the last character in the
       // input string.
-      if (sInputString.length() > 1) {
-        sInputString = sInputString.substring(0, sInputString.length() - 1);
-        fRadiusMultiplierTemp = Float.parseFloat(sInputString);
-      } else if (sInputString.length() == 1) {
-        sInputString = "";
-        fRadiusMultiplierTemp = fRadiusMultiplier;
+      if (inputString.length() > 1) {
+        inputString = inputString.substring(0, inputString.length() - 1);
+        radiusMultiplierTemp = Float.parseFloat(inputString);
+      } else if (inputString.length() == 1) {
+        inputString = "";
+        radiusMultiplierTemp = radiusMultiplier;
       }
     } else {
       // Otherwise, concatenate the String. Each character typed by the
       // user is added to the end of the input String.
       if (key > 47 && key < 58) {
-        sInputString = sInputString + key;
-        fRadiusMultiplierTemp = Float.parseFloat(sInputString);
+        inputString = inputString + key;
+        radiusMultiplierTemp = Float.parseFloat(inputString);
       }
     }
   }
@@ -201,27 +205,27 @@ void keyPressed() {
 
 // Called whenever the left joystick button on the gamepad transitions from low
 // to high. Toggles the control mode each time.
-void changeDriveMode() {
-  bDriveMode = !bDriveMode;
+void toggleDriveMode() {
+  driveMode = !driveMode;
 }
 
 // Called whenever the left joystick button on the gamepad transitions from low
 // to high. Toggles the control mode each time.
-void changeMastMode() {
-  bMastMode = !bMastMode;
+void toggleMastMode() {
+  mastMode = !mastMode;
 }
 
 // Returns the value of the maximum distance of any wheel from its center to the
 // center of rotation of the rover.
-float maxRadius(float fRadius) {
-  float fMaxRadius = 0;
+float maxRadius(float r) {
+  float max = 0;
   for (Rover.Wheel wheel : rover.wheels) {
-    if (wheel.radius(fRadius) > fMaxRadius) {
-      fMaxRadius = wheel.radius(fRadius);
+    if (wheel.radius(r) > max) {
+      max = wheel.radius(r);
     }
   }
 
-  return fMaxRadius;
+  return max;
 }
 
 void drawHUD() {
@@ -229,26 +233,26 @@ void drawHUD() {
   fill(48, 48, 48);
   drawWheelIndicators.draw("Wheel Indicators");
   // Different rules for each mode
-  if (bDriveMode) {
+  if (driveMode) {
     text("Drive Mode: 1", 10, 10);
-    drawRoverRotation.draw("Rotation: " + fRoverRotation);
+    drawRoverRotation.draw("Rotation: " + roverRotation);
   } else {
     text("Drive Mode: 0", 10, 10);
-    drawRoverRadius.draw("Radius: " + fRoverRadius);
-    drawRoverVelocity.draw("Velocity: " + fRoverVelocity);
+    drawRoverRadius.draw("Radius: " + roverRadius);
+    drawRoverVelocity.draw("Velocity: " + roverVelocity);
     text("Radius Multiplier: ", 10, height - 15);
-    radiusMultiplier.draw(String.format("%.0f", fRadiusMultiplierTemp), textWidth("Radius Multiplier: ") + 10, height - 15);
+    radiusMultiplierField.draw(String.format("%.0f", radiusMultiplierTemp), textWidth("Radius Multiplier: ") + 10, height - 15);
   }
 
   // Right side (mast)
   fill(48, 48, 48);
   strokeWeight(2);
-  float fRightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
+  float rightTextWidth = textWidth("Mast Pan: -180" + (char)0x00B0) + 10;
   // Different rules for each mode
-  if (bMastMode) {
-    text("Mast Mode: 1", width - fRightTextWidth, 10);
+  if (mastMode) {
+    text("Mast Mode: 1", width - rightTextWidth, 10);
   } else {
-    text("Mast Mode: 0", width - fRightTextWidth, 10);
+    text("Mast Mode: 0", width - rightTextWidth, 10);
   }
-  text("Mast Pan: " + String.format("%.0f", degrees(fMastPan)) + (char)0x00B0, width - fRightTextWidth, 30);
+  text("Mast Pan: " + String.format("%.0f", degrees(mastPanAngle)) + (char)0x00B0, width - rightTextWidth, 30);
 }
